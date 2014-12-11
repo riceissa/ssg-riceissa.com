@@ -61,6 +61,8 @@ def caps(key, val, f, meta):
     if key == 'Str':
         return Str(val.upper())
 
+def do_nothing(key, val, f, meta):
+    pass
 
 def walk(x, action, format, meta):
     """Walk a tree, applying an action to every object.
@@ -72,14 +74,14 @@ def walk(x, action, format, meta):
         if isinstance(x[0], dict) and 't' in x[0]:
             res = action(x[0]['t'], x[0]['c'], format, meta)
             if res is None:
-                array.append(pandocfilters.walk(x[0], action, format, meta))
+                array.append(pandocfilters.walk(x[0], do_nothing, format, meta))
             elif isinstance(res, list):
                 for z in res:
-                    array.append(pandocfilters.walk(z, action, format, meta))
+                    array.append(pandocfilters.walk(z, do_nothing, format, meta))
             else:
-                array.append(pandocfilters.walk(res, action, format, meta))
+                array.append(pandocfilters.walk(res, do_nothing, format, meta))
         else:
-            array.append(pandocfilters.walk(x[0], action, format, meta))
+            array.append(pandocfilters.walk(x[0], do_nothing, format, meta))
 
         for item in x[1:]:
             if isinstance(item, dict) and 't' in item:
@@ -122,6 +124,6 @@ with open('hello.json','r') as f:
         #format = ""
     array = []
     altered = walk(data, caps, "", data[0]['unMeta'])
-    print altered
-    #json.dump(altered, sys.stdout)
+    #print altered
+    json.dump(altered, sys.stdout)
 
