@@ -14,10 +14,10 @@ import collections
 # then doing tag a should also imply tag c, since the implication chain
 # goes a -> b -> c.  In other words, tag implication should be
 # transitive, in that a -> b and b -> c together mean a -> c.  This
-# means though that you should put the line (a, [b]) before the line
-# (b, [c]), since then the first will be applied, leaving you with the
-# tags a and b, and then the second will be applied, leaving you with
-# tags a, b, and c.
+# means though that you should put (a, [b]) before (b, [c]), since then
+# the first will be applied, leaving you with the tags a and b, and then
+# the second will be applied, leaving you with tags a, b, and c. (This
+# is an OrderedDict so that the above works.)
 tag_implications = collections.OrderedDict([
     ("hakyll", ["haskell"]),
     ("python", ["programming"]),
