@@ -3,7 +3,7 @@
 # the walk function in particular is a modified version of the one there. see the pandocfilters license (3-clause BSD) at: https://github.com/jgm/pandocfilters/blob/master/LICENSE
 
 import json, sys
-from pandocfilters import Str
+from pandocfilters import Str, Space
 import pandocfilters
 
 # a: [b] means that the tag a implies tag b; so if you have a page with tag a, it will automatically also be applied the tag b.
@@ -107,6 +107,36 @@ def walk(x, action, format, meta):
     else:
         return x
 
+def listify(x):
+    '''
+    Take a YAML-JSON list or string of comma-delimited tags,
+    and return a cleaned list.
+    '''
+    if x['t'] == 'MetaInlines':
+        w = [i.strip(',') for i in stringify(x) if i is not ' ']
+        return w
+    elif x['t'] == 'MetaList':
+        return stringify(x)
+
+def intersperse(iterable, delimiter):
+    '''See http://stackoverflow.com/a/5656097/3422337 '''
+    it = iter(iterable)
+    yield next(it)
+    for x in it:
+        yield delimiter
+        yield x
+
+def pack_tags(tags):
+    '''
+    Take a list of tags ("tags") and return a YAML-JSON list of the tags
+    '''
+    result = []
+    for tag in tags:
+        tag_dict = {'t': 'MetaInlines', 'c': [Str(tag)]}
+        result.append(tag_dict)
+    return result
+    #return list(intersperse([Str(i) for i in tags], Space()))
+
 with open('hello.json','r') as f:
     x = f.next()
     data = json.loads(x)
@@ -116,6 +146,14 @@ with open('hello.json','r') as f:
     tags3 = data[0]['unMeta']['tags3']
     tags4 = data[0]['unMeta']['tags4']
     #print data[0]['unMeta'].get('tags', {})
+    #print json.dumps(tags, indent=2)
+    w = listify(tags)
+    w.append("newtag")
+    tags['c'] = pack_tags(w)
+    tags['t'] = 'MetaList'
+    #print tags['c']
+    #print json.dumps(tags, separators=(',',':'))
+    #print json.dumps(, separators=(',',':'))
     #print stringify(tags)
     #print stringify(tags2)
     #print stringify(tags3)
@@ -127,5 +165,6 @@ with open('hello.json','r') as f:
     array = []
     altered = walk(data, caps, "", data[0]['unMeta'])
     #print altered
+    #print json.dumps(altered, indent=2)
     json.dump(altered, sys.stdout)
 
