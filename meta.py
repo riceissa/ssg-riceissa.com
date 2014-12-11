@@ -13,14 +13,33 @@ import collections
 # then doing tag a should also do tag c, since a->b->c. this means that you should put the line 'a: [b]' before the line 'b: [c]', since then the first will be applied, leaving you with the tags 'a b', and then the second will be applied, leaving you with 'a b c'.
 tag_implications = collections.OrderedDict([
     ("hakyll", ["haskell"]),
-    #"python": ["programming"],
-    #"latex": ["linux"],
+    ("python", ["programming"]),
+    ("latex", ["linux"]),
+    ("qs", ["quantified-self"]),
+    ("lesswrong", ["rationality"]),
+    ("logic", ["math"]),
+    ("physics", ["science"]),
+    ("atmospheric-sciences", ["science"]),
+    ("astronomy", ["science"]),
+    ("chemistry", ["science"]),
+    ("", [""]),
+    ("", [""]),
+    ("", [""]),
+    ("", [""]),
     ("haskell", ["programming"]),
+    ("depression", ["psychology"]),
 ])
 
 tag_synonyms = {
     "effective-altruism": ["ea", "effective altruism", "effectivealtruism"],
-    "university-of-washington": ["uw", "uwashington"],
+    "university-of-washington": ["uw", "uwashington", "university of washington"],
+    "set-theory": ["set theory"],
+    "lesswrong": ["lw", "less-wrong", "less wrong"],
+    "cognito-mentoring": ["cm", "cognito mentoring", "cognito"],
+    "math": ["maths", "mathematics"],
+    "link-collection": ["link collection", "resources", "links"],
+    "atmopsheric-sciences": ["atmos"],
+    "chemistry": ["chem"],
 }
 
 def imply_tags(tags, tag_implications):
@@ -30,14 +49,12 @@ def imply_tags(tags, tag_implications):
     '''
     result = list(tags)
     for key in tag_implications:
-        print "checking if " + key + " in " + str(result)
         if key in result:
             result.extend(tag_implications.get(key))
-            print result
     return list(set(result))
 
 t = ['hakyll']
-imply_tags(t, tag_implications)
+print imply_tags(t, tag_implications)
 
 def standardize_tags(tags, tag_synonyms):
     '''
