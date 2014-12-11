@@ -7,3 +7,7 @@ tags4: ["a", "b", "c"]
 ...
 
 This is a sentence.
+
+*emph*
+
+[this](http://google.com)
