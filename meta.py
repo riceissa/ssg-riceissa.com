@@ -5,22 +5,54 @@
 import json, sys
 from pandocfilters import Str, Space
 import pandocfilters
+import collections
 
 # a: [b] means that the tag a implies tag b; so if you have a page with tag a, it will automatically also be applied the tag b.
 # note that the order here is important. let's say we also have
 #    b: [c]
 # then doing tag a should also do tag c, since a->b->c. this means that you should put the line 'a: [b]' before the line 'b: [c]', since then the first will be applied, leaving you with the tags 'a b', and then the second will be applied, leaving you with 'a b c'.
-tag_implication = {
-    "hakyll": ["haskell"],
-    "python": ["programming"],
-    "latex": ["linux"],
-    "haskell": ["programming"],
-}
+tag_implications = collections.OrderedDict([
+    ("hakyll", ["haskell"]),
+    #"python": ["programming"],
+    #"latex": ["linux"],
+    ("haskell", ["programming"]),
+])
 
 tag_synonyms = {
     "effective-altruism": ["ea", "effective altruism", "effectivealtruism"],
     "university-of-washington": ["uw", "uwashington"],
 }
+
+def imply_tags(tags, tag_implications):
+    '''
+    Take a list of tags along with a dictionary of tag implications.
+    Return a new list of tags that includes all the implciations.
+    '''
+    result = list(tags)
+    for key in tag_implications:
+        print "checking if " + key + " in " + str(result)
+        if key in result:
+            result.extend(tag_implications.get(key))
+            print result
+    return list(set(result))
+
+t = ['hakyll']
+imply_tags(t, tag_implications)
+
+def standardize_tags(tags, tag_synonyms):
+    '''
+    Take a list of tags ("tags") along with a dictionary of tag synonyms and return a new list of tags,
+    where all synonymous tags are standardized according to
+    tag_synonyms.  For instance, if tag_synonyms contains the line
+        "university-of-washington": ["uw", "uwashington"],
+    and if tags contains "uw" or "uwashington", then this will be replaced by
+    "university-of-washington".
+    '''
+    result = []
+    for tag in tags:
+        canonical = [key for key, value in tag_synonyms.items() if tag in value]
+        result.extend(canonical)
+    return result
 
 def stringify(x):
     """Walks the tree x and returns concatenated string content,
@@ -166,5 +198,5 @@ with open('hello.json','r') as f:
     altered = walk(data, caps, "", data[0]['unMeta'])
     #print altered
     #print json.dumps(altered, indent=2)
-    json.dump(altered, sys.stdout)
+    #json.dump(altered, sys.stdout)
 
