@@ -40,6 +40,7 @@ tag_synonyms = {
     "link-collection": ["link collection", "resources", "links"],
     "atmopsheric-sciences": ["atmos"],
     "chemistry": ["chem"],
+    "computer-science": ["cs", "computer science"],
 }
 
 def imply_tags(tags, tag_implications):
@@ -58,12 +59,13 @@ print imply_tags(t, tag_implications)
 
 def standardize_tags(tags, tag_synonyms):
     '''
-    Take a list of tags ("tags") along with a dictionary of tag synonyms and return a new list of tags,
-    where all synonymous tags are standardized according to
-    tag_synonyms.  For instance, if tag_synonyms contains the line
+    Take a list of tags ("tags") along with a dictionary of tag synonyms
+    and return a new list of tags, where all synonymous tags are
+    standardized according to tag_synonyms.  For instance, if
+    tag_synonyms contains the line
         "university-of-washington": ["uw", "uwashington"],
-    and if tags contains "uw" or "uwashington", then this will be replaced by
-    "university-of-washington".
+    and if tags contains "uw" or "uwashington", then this will be
+    replaced by "university-of-washington".
     '''
     result = []
     for tag in tags:
