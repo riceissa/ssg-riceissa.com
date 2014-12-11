@@ -1,4 +1,6 @@
 #!/bin/python
+# this script uses pandocfilters: https://github.com/jgm/pandocfilters
+# the walk function in particular is a modified version of the one there. see the pandocfilters license (3-clause BSD) at: https://github.com/jgm/pandocfilters/blob/master/LICENSE
 
 import json, sys
 from pandocfilters import Str
