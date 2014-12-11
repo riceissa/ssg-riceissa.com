@@ -7,10 +7,17 @@ from pandocfilters import Str, Space
 import pandocfilters
 import collections
 
-# a: [b] means that the tag a implies tag b; so if you have a page with tag a, it will automatically also be applied the tag b.
-# note that the order here is important. let's say we also have
-#    b: [c]
-# then doing tag a should also do tag c, since a->b->c. this means that you should put the line 'a: [b]' before the line 'b: [c]', since then the first will be applied, leaving you with the tags 'a b', and then the second will be applied, leaving you with 'a b c'.
+# Below, (a, [b]) means that the tag a implies tag b; so if you have a
+# page with tag a, it will automatically also be applied the tag b.
+# Note that the order here is important.  Let's say we also have
+#    (b, [c])
+# then doing tag a should also imply tag c, since the implication chain
+# goes a -> b -> c.  In other words, tag implication should be
+# transitive, in that a -> b and b -> c together mean a -> c.  This
+# means though that you should put the line (a, [b]) before the line (b,
+# [c]), since then the first will be applied, leaving you with the tags
+# a and b, and then the second will be applied, leaving you with tags a,
+# b, and c.
 tag_implications = collections.OrderedDict([
     ("hakyll", ["haskell"]),
     ("python", ["programming"]),
@@ -22,10 +29,7 @@ tag_implications = collections.OrderedDict([
     ("atmospheric-sciences", ["science"]),
     ("astronomy", ["science"]),
     ("chemistry", ["science"]),
-    ("", [""]),
-    ("", [""]),
-    ("", [""]),
-    ("", [""]),
+    ("analysis", ["math"]),
     ("haskell", ["programming"]),
     ("depression", ["psychology"]),
 ])
