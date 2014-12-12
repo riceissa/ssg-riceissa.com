@@ -40,15 +40,22 @@ def generate_html():
     for filepath in lst_filepaths:
         convert_single_file(filepath, outdir="_site/")
 
-def make_tag_pages(tags):
+def create_tag_pages(tags):
     for tag in tags:
-        template = Template("""Tag: {{ tag }}
-{% for item in seq %}{{ item }}
-{% endfor %}""")
+        template = Template("""Tag: {{ tag }}""")
         print template.render(tag=tag, seq=tags)
+
+def create_all_tags_page(tags):
+        template = Template("""Tags:
+{% for tag in tags %}{{ tag }}
+{% endfor %}""")
+        print template.render(tags=tags)
 
 all_tags = []
 #generate_html()
 #print list(set(all_tags))
-make_tag_pages(["a", "b", "hakyll"])
+lst = ["a", "b", "hakyll"]
+create_tag_pages(lst)
+create_all_tags_page(lst)
+
 
