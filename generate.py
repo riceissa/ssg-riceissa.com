@@ -7,6 +7,7 @@ import os
 import meta
 import json
 from jinja2 import Template
+import shlex
 
 lst_filepaths = glob.glob("pages/*.md")
 #lst_filenames = [os.path.basename(i) for i in lst_filepaths]
@@ -28,7 +29,7 @@ def convert_single_file(filepath, outdir="_site/"):
         command = "pandoc -f json -t html -s --template=skeleton.html --base-header-level=2 -o {outdir}{routename}".format(routename=routename, outdir=outdir)
         print command
         # See http://stackoverflow.com/a/165662/3422337
-        ps = Popen(command.split(' '), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
         output = ps.communicate(input=myjson)[0]
         #print(output)
         #call(command, stdin=myjson, shell=True)
@@ -43,13 +44,20 @@ def generate_html():
 def create_tag_pages(tags):
     for tag in tags:
         template = Template("""Tag: {{ tag }}""")
-        print template.render(tag=tag, seq=tags)
+        doc = template.render(tag=tag, seq=tags)
+        command = 'pandoc -V title="Tag: {tag}" -f markdown -t html --template=skeleton.html -o _site/tags/{tag}'.format(tag=tag)
+        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+        output = ps.communicate(input=doc)[0]
 
 def create_all_tags_page(tags):
         template = Template("""Tags:
-{% for tag in tags %}{{ tag }}
+
+{% for tag in tags %}- [{{ tag }}](./{{ tag }})
 {% endfor %}""")
-        print template.render(tags=tags)
+        doc = template.render(tags=tags)
+        command = "pandoc -f markdown -t html --template=skeleton.html -o _site/tags/index"
+        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+        output = ps.communicate(input=doc)[0]
 
 all_tags = []
 #generate_html()
