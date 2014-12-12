@@ -17,8 +17,10 @@
   <link rel="stylesheet" type="text/css" href="/home/issa/projects/issarice.com/css/minimal.css" />
   <link rel="shortcut icon" type="image/ico" href="/favicon.ico" />
   <title>{{ title }}</title>
-  {% if math %}
-  {{ math }}
+  {% if math|lower in ["yes", "true"] %}
+    <script type="text/javascript"
+      src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
   {% endif %}
   <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -40,13 +42,13 @@
 
 {{ body }}
 
-{% if license %}
 <h2>Licensing</h2>
 {% if license|upper in ["CC0", "CC 0"] %}
 <p><a rel="license" href="http://creativecommons.org/publicdomain/zero/1.0/"><img src="https://i.creativecommons.org/p/zero/1.0/88x31.png" style="border-style: none;" alt="CC0" /></a><br />The content on this page is public domain.</p>
 {% elif license|upper in ["CC BY", "CC-BY", "CCBY"] %}
 <p><a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</p>
-{% endif %}
+{% else %}
+<p>The licensing of this page is unknown.</p>
 {% endif %}
 
 {% if tags %}
