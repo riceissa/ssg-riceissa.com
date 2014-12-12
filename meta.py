@@ -196,13 +196,16 @@ def load_json(filepath):
         x = f.next()
         data = json.loads(x)
 
+def get_meta_field(data, field):
+    return data[0]['unMeta'].get(field, {})
+
 def organize_tags(data, tag_synonyms, tag_implications):
     '''
     Takes the filepath of a JSON file (str filepath) and returns
     a JSON tree of the file with its tags organized according to
     tag_synonyms and tag_implications.
     '''
-    tags = data[0]['unMeta'].get('tags', {})
+    tags = get_meta_field(data, 'tags')
     w = listify(tags)
     #print w
     w = standardize_tags(w, tag_synonyms)
