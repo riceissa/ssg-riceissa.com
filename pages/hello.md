@@ -1,6 +1,6 @@
 ---
 title: hello world [はん](-飯)
-tags: a, b, c
+tags: [a, b, c, hakyll]
 tags2: [a, b, c]
 tags3: "a, b, c"
 tags4: ["a", "b", "c"]
