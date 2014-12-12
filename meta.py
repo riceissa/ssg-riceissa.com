@@ -208,11 +208,14 @@ def organize_tags(data, tag_synonyms, tag_implications):
     w = standardize_tags(w, tag_synonyms)
     #print w
     w = imply_tags(w, tag_implications)
+    keep_tags = list(w)
     tags['c'] = pack_tags(w)
     tags['t'] = 'MetaList'
     #array = []
     #altered = walk(data, caps, "", data[0]['unMeta'])
-    json.dump(data, sys.stdout)
+    #return json.dump(data, sys.stdout)
+    return {'json_dump': json.dumps(data, separators=(',',':')),
+            'tags': keep_tags}
 
 #organize_tags("hello.json", tag_synonyms, tag_implications)
 
