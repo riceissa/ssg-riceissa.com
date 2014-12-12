@@ -1,4 +1,10 @@
 #!/bin/python
+# -*- coding: utf-8 -*-
+
+# FIXME: this is a quick hack to get the encoding errors to go away
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 import glob
 from subprocess import call, check_output, Popen, PIPE, STDOUT
@@ -10,44 +16,77 @@ from jinja2 import Template, Environment, FileSystemLoader
 import shlex
 
 lst_filepaths = glob.glob("pages/*.md")
-#lst_filenames = [os.path.basename(i) for i in lst_filepaths]
-#lst_routenames = [os.path.splitext(i)[0] for i in lst_filenames]
+
+def generate_html(lst_filepaths, outdir="_site/"):
+    '''
+    Take each filepath in lst_filepaths and convert each to HTML.
+    '''
+    for filepath in lst_filepaths:
+        convert_single_file(filepath, outdir)
+
 
 def markdown_to_json(filepath):
+    '''
+    Take a filepath to a markdown file and return the JSON
+    representation of it as a string.
+    '''
     command = "pandoc -f markdown -t json -s {filepath}".format(filepath=filepath)
     return check_output(command, shell=True)
 
 def convert_single_file(filepath, outdir="_site/"):
+    '''
+    Convert a single file from markdown to HTML.  Here filepath is the
+    filepath to the markdown file, and outdir is the directory where the
+    HTML should go.
+    '''
     if os.path.exists(outdir):
         filename = os.path.basename(filepath)
         routename = os.path.splitext(filename)[0]
         myjson = json.loads(markdown_to_json(filepath))
-        myjson = meta.organize_tags(myjson, meta.tag_synonyms, meta.tag_implications)
-        #print myjson['tags']
-        all_tags[routename] = myjson['tags']
-        myjson = myjson['json_dump']
-        command = "pandoc -f json -t html -s --template=skeleton.html --base-header-level=2 -o {outdir}{routename}".format(routename=routename, outdir=outdir)
-        print command
+        # This will return a dict {'json_dump': ..., 'tags': ...}
+        file_dict = meta.organize_tags(myjson, meta.tag_synonyms, meta.tag_implications)
+        # all_tags is global
+        all_tags[routename] = file_dict['tags']
+        myjson = file_dict['json_dump']
+        command = "pandoc -f json -t html --mathjax --base-header-level=2".format(routename=routename, outdir=outdir)
+        #print command
         # See http://stackoverflow.com/a/165662/3422337
-        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE,
+            stderr=STDOUT)
         output = ps.communicate(input=myjson)[0]
+        output = output.decode('utf-8')
+        env = Environment(loader=FileSystemLoader('.'))
+        pagetemp = env.get_template('templates/skeleton.html')
+        #print output
+        title = meta.get_meta_field(json.loads(myjson), "title").decode('utf-8')
+        #print(file_dict['tags'])
+        tags = file_dict['tags']
+        print json.loads(myjson)
+        # FIXME: for some reason, math: yes without quotes is turning into a boolean in pandoc's json representation, while math: "yes" with quotes works fine...
+        math = meta.get_meta_field(json.loads(myjson), "math")
+        print math
+        final = pagetemp.render(body=output, title=title, tags=tags, license='cc', math=math).encode('utf-8')
+        with open("{outdir}{routename}".format(outdir=outdir,
+            routename=routename), "w") as f:
+            f.write(final)
         #print(output)
-        #call(command, stdin=myjson, shell=True)
         return all_tags
     else:
         print("{outdir} does not exist!".format(outdir=outdir))
 
-def generate_html():
-    for filepath in lst_filepaths:
-        convert_single_file(filepath, outdir="_site/")
-
 def create_tag_pages(tags_dict):
+    '''
+    Automatically create a series of pages, one for each tag that
+    appears in tags_dict.  Here tags_dict is a dictionary that has keys
+    that are routenames (i.e. slugs of page names) with values that are
+    the list of tags for each page.
+    '''
     tags = list(set([val for subl in tags_dict.values() for val in subl]))
-    print tags
-    print tags_dict
+    print(tags)
+    print(tags_dict)
     for tag in tags:
         pages_with_tag = [page for page, page_tags in tags_dict.items() if tag in page_tags]
-        print str(pages_with_tag) + " has " + tag
+        print(str(pages_with_tag) + " has " + tag)
         template = Template("""Tag: {{ tag }}
 
 {% for page in pages_with_tag %}- [{{ page }}](./{{ page }})
@@ -58,25 +97,31 @@ def create_tag_pages(tags_dict):
         output = ps.communicate(input=doc)[0]
 
 def create_all_tags_page(tags):
-        template = Template("""Tags:
+    '''
+    Automatically create a single HTML page that lists and links to each
+    of the tags that are used throughout the website.  The list of tags
+    is obtained from the parameter tags.
+    '''
+    template = Template("""Tags:
 
 {% for tag in tags %}- [{{ tag }}](./{{ tag }})
 {% endfor %}""")
-        doc = template.render(tags=tags)
-        command = "pandoc -f markdown -t html"
-        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-        output = ps.communicate(input=doc)[0]
-        env = Environment(loader=FileSystemLoader('.'))
-        pagetemp = env.get_template('skeleton.html')
-        final = pagetemp.render(body=output, title="hello")
-        with open("_site/tags/index", "w") as f:
-            f.write(final.encode('utf-8'))
+    doc = template.render(tags=tags)
+    command = "pandoc -f markdown -t html"
+    ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
+    output = ps.communicate(input=doc)[0]
+    env = Environment(loader=FileSystemLoader('.'))
+    pagetemp = env.get_template('templates/skeleton.html')
+    final = pagetemp.render(body=output, title="hello")
+    with open("_site/tags/index", "w") as f:
+        f.write(final.encode('utf-8'))
 
 all_tags = {}
-#generate_html()
-print list(set(all_tags))
+#generate_html(lst_filepaths)
+#print(list(set(all_tags)))
 d = {"article1": ["a", "b"], "article2": ["b", "hakyll"]}
+convert_single_file("pages/hello.md")
 #create_tag_pages(d)
-create_all_tags_page(list(set([i for subl in d.values() for i in subl])))
+#create_all_tags_page(list(set([i for subl in d.values() for i in subl])))
 
 
