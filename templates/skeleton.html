@@ -15,10 +15,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="/home/issa/projects/issarice.com/css/minimal.css" />
   <link rel="shortcut icon" type="image/ico" href="/favicon.ico" />
-  <title>$title$</title>
-  $if(math)$
-  $math$
-  $endif$
+  <title>{{ title }}</title>
+  {% if math %}
+  {{ math }}
+  {% endif %}
   <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -32,19 +32,27 @@
 </head>
 <body>
 
+{% include "navbar.html" %}
 
 <div id="content">
-<h1>$title$</h1>
+<h1>{{ title }}</h1>
 
-$body$
+{{ body }}
 
-$if(license)$
-<p>$license$</p>
-$endif$
+{% if license %}
+<p>{{ license }}</p>
+{% endif %}
 
-$if(tags)$
-<p>Tags: $for(tags)$$tags$$sep$, $endfor$.</p>
-$endif$
+{% if tags %}
+<p>Tags:
+  {%- for tag in tags %}
+    {%- if loop.last -%}
+      {{ tags }}
+    {%- else -%}
+      {{ tags }}, 
+    {% endif %}
+  {% endfor -%}.</p>
+{% endif %}
 </div>
 
 </body>
