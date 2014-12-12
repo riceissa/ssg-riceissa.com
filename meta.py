@@ -17,7 +17,8 @@ import collections
 # means though that you should put (a, [b]) before (b, [c]), since then
 # the first will be applied, leaving you with the tags a and b, and then
 # the second will be applied, leaving you with tags a, b, and c. (This
-# is an OrderedDict so that the above works.)
+# is an OrderedDict so that the above works.)  It is also assumed here
+# that everything in tag_implications is standardized.
 tag_implications = collections.OrderedDict([
     ("hakyll", ["haskell"]),
     ("python", ["programming"]),
@@ -34,6 +35,9 @@ tag_implications = collections.OrderedDict([
     ("depression", ["psychology"]),
 ])
 
+# Dictionary of tag synonyms or "shortcuts".  This is mostly useful when
+# a tag can be spelled in multiple ways or has common abbreviations.
+# This should be used before doing tag implications.
 tag_synonyms = {
     "effective-altruism": ["ea", "effective altruism", "effectivealtruism"],
     "university-of-washington": ["uw", "uwashington", "university of washington"],
@@ -49,8 +53,10 @@ tag_synonyms = {
 
 def imply_tags(tags, tag_implications):
     '''
-    Take a list of tags along with a dictionary of tag implications.
-    Return a new list of tags that includes all the implciations.
+    Take a list of tags (tags :: list) along with an OrderedDict of tag
+    implications (tag_implications :: OrderedDict).  Return a new list
+    of tags that includes all the implications.  Apply this after
+    standardizing tags.
     '''
     result = list(tags)
     for key in tag_implications:
@@ -60,10 +66,10 @@ def imply_tags(tags, tag_implications):
 
 def standardize_tags(tags, tag_synonyms):
     '''
-    Take a list of tags ("tags") along with a dictionary of tag synonyms
-    and return a new list of tags, where all synonymous tags are
-    standardized according to tag_synonyms.  For instance, if
-    tag_synonyms contains the line
+    Take a list of tags (tags :: list) along with a dictionary of tag
+    synonyms (tag_synonyms :: dict) and return a new list of tags, where
+    all synonymous tags are standardized according to tag_synonyms.  For
+    instance, if tag_synonyms contains the line
         "university-of-washington": ["uw", "uwashington"],
     and if tags contains "uw" or "uwashington", then this will be
     replaced by "university-of-washington".
@@ -77,8 +83,9 @@ def standardize_tags(tags, tag_synonyms):
     return result
 
 def stringify(x):
-    """Walks the tree x and returns concatenated string content,
-    leaving out all formatting.
+    """
+    Modified version of the pandocfilters stringify, where instead of a
+    string, a list is returned.
     """
     result = []
 
@@ -100,29 +107,33 @@ def stringify(x):
 
 
 def gogo(key, val, f, meta):
+    '''
+    Experimental filter.
+    '''
     if key == 'MetaInLines':
         result = meta.get("tags", {}).get('t', {})
         if 'MetaInLines' in result:
             return Str(val + "yo")
-    #elif key == 'Code':
-        #return Str(val)
-    #elif key == 'Math':
-        #return Str(val)
-    #elif key == 'LineBreak':
-        #return Str(val)
-    #elif key == 'Space':
-        #return Str(val)
 
 def caps(key, val, f, meta):
+    '''
+    Caps filter from pandocfilters.
+    '''
     if key == 'Str':
         return Str(val.upper())
 
 def do_nothing(key, val, f, meta):
+    '''
+    Filter that does nothing.
+    '''
     pass
 
 def walk(x, action, format, meta):
-    """Walk a tree, applying an action to every object.
-    Returns a modified tree.
+    """
+    Modified version of walk from pandocfilters.  This version will
+    separate out the metadata from the rest of the file, and will apply
+    do_nothing to it (i.e. will leave the metadata unchanged) while
+    applying action to the body of the file.
     """
     if isinstance(x, list):
         #print "list!"
@@ -182,7 +193,8 @@ def intersperse(iterable, delimiter):
 
 def pack_tags(tags):
     '''
-    Take a list of tags ("tags") and return a YAML-JSON list of the tags
+    Take a list of tags (tags :: list) and return a YAML-JSON list of
+    the tags.
     '''
     result = []
     for tag in tags:
@@ -192,40 +204,47 @@ def pack_tags(tags):
     #return list(intersperse([Str(i) for i in tags], Space()))
 
 def load_json(filepath):
+    '''
+    Take a JSON filepath (:: str) and return its JSON object.
+    '''
     with open(filepath, 'r') as f:
         x = f.next()
         data = json.loads(x)
+        return data
 
 def get_meta_field(data, field):
-    return data[0]['unMeta'].get(field, {})
+    '''
+    Take a JSON object (data) and a field name (str) and return a string
+    of the field value according to pandocfilters' stringify.
+    FIXME: Maybe formatting for e.g. math should be retained instead of
+    converting to a string?
+    '''
+    x = data[0]['unMeta'].get(field, {})
+    return pandocfilters.stringify(x)
 
 def organize_tags(data, tag_synonyms, tag_implications):
     '''
-    Takes the filepath of a JSON file (str filepath) and returns
-    a JSON tree of the file with its tags organized according to
-    tag_synonyms and tag_implications.
+    Takes a JSON object (data), a list of tag_synonyms, and a list of
+    tag_implications. Returns a dictionary with two key-value pairs:
+    under 'json_dump', the JSON string/dump of data with its tags
+    organized according to tag_synonyms and tag_implications is stored;
+    under 'tags' a list of the cleaned/organized (same as in the JSON
+    dump) tags is stored.
     '''
-    tags = get_meta_field(data, 'tags')
+    tags = data[0]['unMeta'].get('tags', {})
     w = listify(tags)
-    #print w
     w = standardize_tags(w, tag_synonyms)
-    #print w
     w = imply_tags(w, tag_implications)
     keep_tags = list(w)
     tags['c'] = pack_tags(w)
     tags['t'] = 'MetaList'
-    #array = []
-    #altered = walk(data, caps, "", data[0]['unMeta'])
-    #return json.dump(data, sys.stdout)
     return {'json_dump': json.dumps(data, separators=(',',':')),
             'tags': keep_tags}
 
-#organize_tags("hello.json", tag_synonyms, tag_implications)
-
-    #if len(sys.argv) > 1:
-        #format = sys.argv[1]
-    #else:
-        #format = ""
-    #print altered
-    #print json.dumps(altered, indent=2)
-
+# FIXME: In pandocfilters, this is how format is set; in the script
+# above, we just set it to "", but maybe this will cause problems
+# somewhere.
+#if len(sys.argv) > 1:
+    #format = sys.argv[1]
+#else:
+    #format = ""
