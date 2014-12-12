@@ -58,9 +58,6 @@ def imply_tags(tags, tag_implications):
             result.extend(tag_implications.get(key))
     return list(set(result))
 
-t = ['hakyll']
-print imply_tags(t, tag_implications)
-
 def standardize_tags(tags, tag_synonyms):
     '''
     Take a list of tags ("tags") along with a dictionary of tag synonyms
@@ -192,34 +189,31 @@ def pack_tags(tags):
     return result
     #return list(intersperse([Str(i) for i in tags], Space()))
 
-with open('hello.json','r') as f:
-    x = f.next()
-    data = json.loads(x)
-    #print json.dumps(data, indent=2)
-    tags = data[0]['unMeta']['tags']
-    tags2 = data[0]['unMeta']['tags2']
-    tags3 = data[0]['unMeta']['tags3']
-    tags4 = data[0]['unMeta']['tags4']
-    #print data[0]['unMeta'].get('tags', {})
-    #print json.dumps(tags, indent=2)
-    w = listify(tags)
-    w.append("newtag")
-    tags['c'] = pack_tags(w)
-    tags['t'] = 'MetaList'
-    #print tags['c']
-    #print json.dumps(tags, separators=(',',':'))
-    #print json.dumps(, separators=(',',':'))
-    #print stringify(tags)
-    #print stringify(tags2)
-    #print stringify(tags3)
-    #print stringify(tags4)
+def organize_tags(filepath, tag_synonyms, tag_implications):
+    '''
+    Takes the filepath of a JSON file (str filepath) and returns
+    a JSON tree of the file with its tags organized according to
+    tag_synonyms and tag_implications.
+    '''
+    with open(filepath, 'r') as f:
+        x = f.next()
+        data = json.loads(x)
+        tags = data[0]['unMeta'].get('tags', {})
+        w = listify(tags)
+        w = standardize_tags(w, tag_synonyms)
+        w = imply_tags(w, tag_implications)
+        tags['c'] = pack_tags(w)
+        tags['t'] = 'MetaList'
+        #array = []
+        #altered = walk(data, caps, "", data[0]['unMeta'])
+        json.dump(data, sys.stdout)
+
+organize_tags("hello.json", tag_synonyms, tag_implications)
+
     #if len(sys.argv) > 1:
         #format = sys.argv[1]
     #else:
         #format = ""
-    array = []
-    altered = walk(data, caps, "", data[0]['unMeta'])
     #print altered
     #print json.dumps(altered, indent=2)
-    #json.dump(altered, sys.stdout)
 
