@@ -7,9 +7,45 @@ from pandocfilters import Str, Space
 import pandocfilters
 import collections
 
-# Below, (a, [b]) means that the tag a implies tag b; so if you have a
-# page with tag a, it will automatically also be applied the tag b.
-# Note that the order here is important.  Let's say we also have
+# Dictionary of tag synonyms or "shortcuts" to be used with
+# standardize_tags.  This is mostly useful when
+# a tag can be spelled in multiple ways or has common abbreviations.
+# This should be used before doing tag implications.
+tag_synonyms = {
+    "effective-altruism": ["ea", "effective altruism", "effectivealtruism"],
+    "university-of-washington": ["uw", "uwashington", "university of washington"],
+    "set-theory": ["set theory"],
+    "lesswrong": ["lw", "less-wrong", "less wrong"],
+    "cognito-mentoring": ["cm", "cognito mentoring", "cognito"],
+    "math": ["maths", "mathematics"],
+    "link-collection": ["link collection", "resources", "links"],
+    "atmopsheric-sciences": ["atmos"],
+    "chemistry": ["chem"],
+    "computer-science": ["cs", "computer science"],
+}
+
+def standardize_tags(tags, tag_synonyms):
+    '''
+    Take a list of tags (tags :: list) along with a dictionary of tag
+    synonyms (tag_synonyms :: dict) and return a new list of tags, where
+    all synonymous tags are standardized according to tag_synonyms.  For
+    instance, if tag_synonyms contains the line
+        "university-of-washington": ["uw", "uwashington"],
+    and if tags contains "uw" or "uwashington", then this will be
+    replaced by "university-of-washington".
+    '''
+    result = []
+    for tag in tags:
+        canonical = [key for key, value in tag_synonyms.items() if tag in value]
+        if not canonical:
+            canonical = [tag]
+        result.extend(canonical)
+    return result
+
+# List of tag implications to be used with imply_tags.  Below, (a, [b])
+# means that the tag a implies tag b; so if you have a page with tag a,
+# it will automatically also be applied the tag b.  Note that the order
+# here is important.  Let's say we also have
 #    (b, [c])
 # then doing tag a should also imply tag c, since the implication chain
 # goes a -> b -> c.  In other words, tag implication should be
@@ -35,22 +71,6 @@ tag_implications = collections.OrderedDict([
     ("depression", ["psychology"]),
 ])
 
-# Dictionary of tag synonyms or "shortcuts".  This is mostly useful when
-# a tag can be spelled in multiple ways or has common abbreviations.
-# This should be used before doing tag implications.
-tag_synonyms = {
-    "effective-altruism": ["ea", "effective altruism", "effectivealtruism"],
-    "university-of-washington": ["uw", "uwashington", "university of washington"],
-    "set-theory": ["set theory"],
-    "lesswrong": ["lw", "less-wrong", "less wrong"],
-    "cognito-mentoring": ["cm", "cognito mentoring", "cognito"],
-    "math": ["maths", "mathematics"],
-    "link-collection": ["link collection", "resources", "links"],
-    "atmopsheric-sciences": ["atmos"],
-    "chemistry": ["chem"],
-    "computer-science": ["cs", "computer science"],
-}
-
 def imply_tags(tags, tag_implications):
     '''
     Take a list of tags (tags :: list) along with an OrderedDict of tag
@@ -63,24 +83,6 @@ def imply_tags(tags, tag_implications):
         if key in result:
             result.extend(tag_implications.get(key))
     return list(set(result))
-
-def standardize_tags(tags, tag_synonyms):
-    '''
-    Take a list of tags (tags :: list) along with a dictionary of tag
-    synonyms (tag_synonyms :: dict) and return a new list of tags, where
-    all synonymous tags are standardized according to tag_synonyms.  For
-    instance, if tag_synonyms contains the line
-        "university-of-washington": ["uw", "uwashington"],
-    and if tags contains "uw" or "uwashington", then this will be
-    replaced by "university-of-washington".
-    '''
-    result = []
-    for tag in tags:
-        canonical = [key for key, value in tag_synonyms.items() if tag in value]
-        if not canonical:
-            canonical = [tag]
-        result.extend(canonical)
-    return result
 
 def stringify(x):
     """
@@ -105,73 +107,6 @@ def stringify(x):
     #return ''.join(result)
     return result
 
-
-def gogo(key, val, f, meta):
-    '''
-    Experimental filter.
-    '''
-    if key == 'MetaInLines':
-        result = meta.get("tags", {}).get('t', {})
-        if 'MetaInLines' in result:
-            return Str(val + "yo")
-
-def caps(key, val, f, meta):
-    '''
-    Caps filter from pandocfilters.
-    '''
-    if key == 'Str':
-        return Str(val.upper())
-
-def do_nothing(key, val, f, meta):
-    '''
-    Filter that does nothing.
-    '''
-    pass
-
-def walk(x, action, format, meta):
-    """
-    Modified version of walk from pandocfilters.  This version will
-    separate out the metadata from the rest of the file, and will apply
-    do_nothing to it (i.e. will leave the metadata unchanged) while
-    applying action to the body of the file.
-    """
-    if isinstance(x, list):
-        #print "list!"
-        array = []
-        if isinstance(x[0], dict) and 't' in x[0]:
-            res = action(x[0]['t'], x[0]['c'], format, meta)
-            if res is None:
-                array.append(pandocfilters.walk(x[0], do_nothing, format, meta))
-            elif isinstance(res, list):
-                for z in res:
-                    array.append(pandocfilters.walk(z, do_nothing, format, meta))
-            else:
-                array.append(pandocfilters.walk(res, do_nothing, format, meta))
-        else:
-            array.append(pandocfilters.walk(x[0], do_nothing, format, meta))
-
-        for item in x[1:]:
-            if isinstance(item, dict) and 't' in item:
-                res = action(item['t'], item['c'], format, meta)
-                if res is None:
-                    array.append(pandocfilters.walk(item, action, format, meta))
-                elif isinstance(res, list):
-                    for z in res:
-                        array.append(pandocfilters.walk(z, action, format, meta))
-                else:
-                    array.append(pandocfilters.walk(res, action, format, meta))
-            else:
-                array.append(pandocfilters.walk(item, action, format, meta))
-        return array
-    elif isinstance(x, dict):
-        #print "dict!"
-        obj = {}
-        for k in x:
-            obj[k] = pandocfilters.walk(x[k], action, format, meta)
-        return obj
-    else:
-        return x
-
 def listify(x):
     '''
     Take a YAML-JSON list or string of comma-delimited tags,
@@ -182,14 +117,6 @@ def listify(x):
         return w
     elif x['t'] == 'MetaList':
         return stringify(x)
-
-def intersperse(iterable, delimiter):
-    '''See http://stackoverflow.com/a/5656097/3422337 '''
-    it = iter(iterable)
-    yield next(it)
-    for x in it:
-        yield delimiter
-        yield x
 
 def pack_tags(tags):
     '''
