@@ -6,7 +6,7 @@ import subprocess
 import os
 import meta
 import json
-from jinja2 import Template
+from jinja2 import Template, Environment, FileSystemLoader
 import shlex
 
 lst_filepaths = glob.glob("pages/*.md")
@@ -53,7 +53,7 @@ def create_tag_pages(tags_dict):
 {% for page in pages_with_tag %}- [{{ page }}](./{{ page }})
 {% endfor %}""")
         doc = template.render(tag=tag, pages_with_tag=pages_with_tag)
-        command = 'pandoc -V title="Tag: {tag}" -f markdown -t html --template=skeleton.html -o _site/tags/{tag}'.format(tag=tag)
+        command = 'pandoc -f markdown -t html -o _site/tags/{tag}'.format(tag=tag)
         ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
         output = ps.communicate(input=doc)[0]
 
@@ -63,15 +63,20 @@ def create_all_tags_page(tags):
 {% for tag in tags %}- [{{ tag }}](./{{ tag }})
 {% endfor %}""")
         doc = template.render(tags=tags)
-        command = "pandoc -f markdown -t html --template=skeleton.html -o _site/tags/index"
+        command = "pandoc -f markdown -t html"
         ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
         output = ps.communicate(input=doc)[0]
+        env = Environment(loader=FileSystemLoader('.'))
+        pagetemp = env.get_template('skeleton.html')
+        final = pagetemp.render(body=output, title="hello")
+        with open("_site/tags/index", "w") as f:
+            f.write(final.encode('utf-8'))
 
 all_tags = {}
 #generate_html()
 print list(set(all_tags))
 d = {"article1": ["a", "b"], "article2": ["b", "hakyll"]}
-create_tag_pages(d)
+#create_tag_pages(d)
 create_all_tags_page(list(set([i for subl in d.values() for i in subl])))
 
 
