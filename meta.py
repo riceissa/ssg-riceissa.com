@@ -71,6 +71,8 @@ def standardize_tags(tags, tag_synonyms):
     result = []
     for tag in tags:
         canonical = [key for key, value in tag_synonyms.items() if tag in value]
+        if not canonical:
+            canonical = [tag]
         result.extend(canonical)
     return result
 
@@ -200,7 +202,9 @@ def organize_tags(filepath, tag_synonyms, tag_implications):
         data = json.loads(x)
         tags = data[0]['unMeta'].get('tags', {})
         w = listify(tags)
+        #print w
         w = standardize_tags(w, tag_synonyms)
+        #print w
         w = imply_tags(w, tag_implications)
         tags['c'] = pack_tags(w)
         tags['t'] = 'MetaList'
