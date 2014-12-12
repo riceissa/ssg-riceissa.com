@@ -103,7 +103,8 @@ def stringify(x):
         elif key == 'Space':
             result.append(" ")
 
-    walk(x, go, "", {})
+    # FIXME: maybe this has to be the modified walk in unused.py...
+    pandocfilters.walk(x, go, "", {})
     #return ''.join(result)
     return result
 
