@@ -191,28 +191,30 @@ def pack_tags(tags):
     return result
     #return list(intersperse([Str(i) for i in tags], Space()))
 
-def organize_tags(filepath, tag_synonyms, tag_implications):
+def load_json(filepath):
+    with open(filepath, 'r') as f:
+        x = f.next()
+        data = json.loads(x)
+
+def organize_tags(data, tag_synonyms, tag_implications):
     '''
     Takes the filepath of a JSON file (str filepath) and returns
     a JSON tree of the file with its tags organized according to
     tag_synonyms and tag_implications.
     '''
-    with open(filepath, 'r') as f:
-        x = f.next()
-        data = json.loads(x)
-        tags = data[0]['unMeta'].get('tags', {})
-        w = listify(tags)
-        #print w
-        w = standardize_tags(w, tag_synonyms)
-        #print w
-        w = imply_tags(w, tag_implications)
-        tags['c'] = pack_tags(w)
-        tags['t'] = 'MetaList'
-        #array = []
-        #altered = walk(data, caps, "", data[0]['unMeta'])
-        json.dump(data, sys.stdout)
+    tags = data[0]['unMeta'].get('tags', {})
+    w = listify(tags)
+    #print w
+    w = standardize_tags(w, tag_synonyms)
+    #print w
+    w = imply_tags(w, tag_implications)
+    tags['c'] = pack_tags(w)
+    tags['t'] = 'MetaList'
+    #array = []
+    #altered = walk(data, caps, "", data[0]['unMeta'])
+    json.dump(data, sys.stdout)
 
-organize_tags("hello.json", tag_synonyms, tag_implications)
+#organize_tags("hello.json", tag_synonyms, tag_implications)
 
     #if len(sys.argv) > 1:
         #format = sys.argv[1]
