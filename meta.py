@@ -131,15 +131,6 @@ def pack_tags(tags):
     return result
     #return list(intersperse([Str(i) for i in tags], Space()))
 
-def load_json(filepath):
-    '''
-    Take a JSON filepath (:: str) and return its JSON object.
-    '''
-    with open(filepath, 'r') as f:
-        x = f.next()
-        data = json.loads(x)
-        return data
-
 def get_meta_field(data, field):
     '''
     Take a JSON object (data) and a field name (str) and return a string
