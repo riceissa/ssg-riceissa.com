@@ -73,3 +73,28 @@ def intersperse(iterable, delimiter):
     for x in it:
         yield delimiter
         yield x
+
+
+def stringify(x):
+    """
+    Modified version of the pandocfilters stringify, where instead of a
+    string, a list is returned.
+    """
+    result = []
+
+    def go(key, val, format, meta):
+        if key == 'Str':
+            result.append(val)
+        elif key == 'Code':
+            result.append(val[1])
+        elif key == 'Math':
+            result.append(val[1])
+        elif key == 'LineBreak':
+            result.append(" ")
+        elif key == 'Space':
+            result.append(" ")
+
+    # FIXME: maybe this has to be the modified walk in unused.py...
+    pandocfilters.walk(x, go, "", {})
+    #return ''.join(result)
+    return result
