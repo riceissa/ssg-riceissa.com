@@ -24,15 +24,6 @@ def generate_html(lst_filepaths, outdir="_site/"):
     for filepath in lst_filepaths:
         convert_single_file(filepath, outdir)
 
-
-def markdown_to_json(filepath):
-    '''
-    Take a filepath to a markdown file and return the JSON
-    representation of it as a string.
-    '''
-    command = "pandoc -f markdown -t json -s {filepath}".format(filepath=filepath)
-    return check_output(command, shell=True)
-
 def convert_single_file(filepath, outdir="_site/"):
     '''
     Convert a single file from markdown to HTML.  Here filepath is the
