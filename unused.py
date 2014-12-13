@@ -121,3 +121,23 @@ def get_meta_field(data, field):
     '''
     x = data[0]['unMeta'].get(field, {})
     return pandocfilters.stringify(x)
+
+
+def organize_tags(data, tag_synonyms, tag_implications):
+    '''
+    Takes a JSON object (data), a list of tag_synonyms, and a list of
+    tag_implications. Returns a dictionary with two key-value pairs:
+    under 'json_dump', the JSON string/dump of data with its tags
+    organized according to tag_synonyms and tag_implications is stored;
+    under 'tags' a list of the cleaned/organized (same as in the JSON
+    dump) tags is stored.
+    '''
+    tags = data[0]['unMeta'].get('tags', {})
+    w = listify(tags)
+    w = standardize_tags(w, tag_synonyms)
+    w = imply_tags(w, tag_implications)
+    keep_tags = list(w)
+    tags['c'] = pack_tags(w)
+    tags['t'] = 'MetaList'
+    return {'json_dump': json.dumps(data, separators=(',',':')),
+            'tags': keep_tags}
