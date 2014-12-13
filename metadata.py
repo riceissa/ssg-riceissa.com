@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json, sys
+import glob
 from pandocfilters import Str, Space
 import pandocfilters
 import commands as c
@@ -103,6 +104,9 @@ def match(route, compiler, file_pattern, outdir="_site/"):
         print("{outdir} does not exist!".format(outdir=outdir))
 
 def markdown_to_html_compiler(filepath):
+    '''
+    Take the filepath of a single markdown file and compile to HTML.
+    '''
     filename = os.path.basename(filepath)
     command = "pandoc -f markdown -t json -s {filepath}".format(filepath=filepath)
     json_lst = json.loads(c.run_command(command))
@@ -161,12 +165,15 @@ def tag_page_compiler(tag_data):
     final = skeleton.render(body=output, title="Tag: " + tag_data['tag'], license='CC0').encode('utf-8')
     return final
 
+# List of all the tag_data
+all_tag_data = []
 #for tag in SOMETAGSLIST:
     #create(compiled=tag_page_compiler(tag), filename=tag, outdir="_site/tags/")
 
 json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
 compiled = all_tags_page_compiler(["a", "b", "c"])
 create(compiled=compiled, filename="index", outdir="_site/tags/")
+#match(route=id_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md" outdir="_site/"):
 #for i in ["title", "tags", "tags2", "tags3", "math", "math2"]:
     #print(get_metadata_field(json_lst, i))
     #print(type(get_metadata_field(json_lst, i)))
