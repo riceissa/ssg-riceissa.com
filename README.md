@@ -12,3 +12,7 @@ eventually this may replace hakyll for generating html pages on my [personal sit
 - sitemap?
 - support for gitit-like internal linking?
 - jinja templates?
+
+- get unicode stuff to work properly:
+    - <https://stackoverflow.com/questions/447107/what-is-the-difference-between-encode-decode>
+    - <https://stackoverflow.com/questions/22181944/using-utf-8-characters-in-a-jinja2-template>
