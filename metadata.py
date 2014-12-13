@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import json, sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import glob
 from pandocfilters import Str, Space
 import pandocfilters
@@ -107,26 +109,27 @@ def markdown_to_html_compiler(filepath):
     '''
     Take the filepath of a single markdown file and compile to HTML.
     '''
+    global tagdir
     filename = os.path.basename(filepath)
     command = "pandoc -f markdown -t json -s {filepath}".format(filepath=filepath)
     json_lst = json.loads(c.run_command(command))
-    # This will return a dict {'json_dump': ..., 'tags': ...}
+    # This will return a dict {'json': ..., 'tags': ...}
     file_dict = organize_tags(json_lst, meta.tag_synonyms, meta.tag_implications)
     json_lst = file_dict['json']
     tags = file_dict['tags']
     # all_tags is global
     #all_tags[routename] = file_dict['tags']
     command = "pandoc -f json -t html --mathjax --base-header-level=2"
-    html_output = c.run_command(command, pipe_in=json.dumps(json_lst, separators=(',',':'))).decode('utf-8')
+    html_output = c.run_command(command, pipe_in=json.dumps(json_lst, separators=(',',':'))).encode('utf-8')
     env = Environment(loader=FileSystemLoader('.'))
     skeleton = env.get_template('templates/skeleton.html')
 
     # Get metadata ready
-    title = get_metadata_field(json_lst, "title").decode('utf-8')
+    title = get_metadata_field(json_lst, "title")
     math = get_metadata_field(json_lst, "math")
-    license = get_metadata_field(json_lst, "license").decode('utf-8')
+    license = get_metadata_field(json_lst, "license")
 
-    final = skeleton.render(body=html_output, title=title, tags=tags, license=license, math=math).encode('utf-8')
+    final = skeleton.render(body=html_output, title=title, tags=tags, tagdir=tagdir, license=license, math=math).encode('utf-8')
     return final
 
 def all_tags_page_compiler(tags_lst, outdir="_site/"):
@@ -135,13 +138,14 @@ def all_tags_page_compiler(tags_lst, outdir="_site/"):
     that are used throughout the website (included in the tags_lst
     parameter).
     '''
+    global baseurl
     tags_lst_of_dicts = []
     for tag in tags_lst:
-        tag_dict = {'title': tag.decode('utf-8'), 'url': (outdir + "tags/" + tag).decode('utf-8')}
+        tag_dict = {'title': tag, 'url': (outdir + "tags/" + tag)}
         tags_lst_of_dicts.append(tag_dict)
     env = Environment(loader=FileSystemLoader('.'))
     page_list = env.get_template('templates/page-list.html')
-    output = page_list.render(pages=tags_lst_of_dicts)
+    output = page_list.render(pages=tags_lst_of_dicts, baseurl=baseurl)
     skeleton = env.get_template('templates/skeleton.html')
     final = skeleton.render(body=output, title="List of all tags", license='CC0').encode('utf-8')
     return final
@@ -158,9 +162,10 @@ def tag_page_compiler(tag_data):
         ]
     }
     '''
+    global baseurl
     env = Environment(loader=FileSystemLoader('.'))
     page_list = env.get_template('templates/page-list.html')
-    output = page_list.render(pages=tag_data['pages'])
+    output = page_list.render(pages=tag_data['pages'], baseurl=baseurl)
     skeleton = env.get_template('templates/skeleton.html')
     final = skeleton.render(body=output, title="Tag: " + tag_data['tag'], license='CC0').encode('utf-8')
     return final
@@ -187,7 +192,7 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
         title = get_metadata_field(json_lst, "title")
         url = os.path.splitext(os.path.basename(page))[0]
         tags = file_dict['tags']
-        all_tags.extend(tags)
+        all_tags.extend([i for i in tags])
         page_data.append((title, url, tags))
     all_tags = list(set(all_tags))
     for tag in all_tags:
@@ -201,12 +206,15 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
 
 #### Actually generate the site
 
-for tag_data in generate_all_tags_data(file_pattern="pages/*.md"):
+tagdir = "../tags/"
+baseurl = "../pages/"
+
+for tag_data in generate_all_tag_data(file_pattern="pages/*.md"):
     create(compiled=tag_page_compiler(tag_data), filename=tag_data['tag'], outdir="_site/tags/")
 
 create(compiled=all_tags_page_compiler(all_tags), filename="index", outdir="_site/tags/")
 
-match(route=id_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md" outdir="_site/"):
+match(route=cool_uri_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md", outdir="_site/")
 
 #json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
 #for i in ["title", "tags", "tags2", "tags3", "math", "math2"]:
