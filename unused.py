@@ -98,3 +98,15 @@ def stringify(x):
     pandocfilters.walk(x, go, "", {})
     #return ''.join(result)
     return result
+
+
+def listify(x):
+    '''
+    Take a YAML-JSON list or string of comma-delimited tags,
+    and return a cleaned list.
+    '''
+    if x['t'] == 'MetaInlines':
+        w = [i.strip(',') for i in stringify(x) if i is not ' ']
+        return w
+    elif x['t'] == 'MetaList':
+        return stringify(x)
