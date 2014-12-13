@@ -1,10 +1,10 @@
 ---
 title: hello world [はん](-飯)
-math: "yes"
-tags: [yesyes, b, c, hakyll]
+math: no
+math2: $\sin x$
+tags: [a, b, c, hakyll]
 tags2: [a, b, c]
-tags3: "a, b, c"
-tags4: yes
+tags3: [yes, yes, no]
 ...
 
 This is a sentence.
