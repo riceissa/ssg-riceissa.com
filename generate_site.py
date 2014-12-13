@@ -154,8 +154,3 @@ create(compiled=all_tags_page_compiler(all_tags), filename="index", outdir="_sit
 
 match(route=cool_uri_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md", outdir="_site/")
 
-#json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
-#for i in ["title", "tags", "tags2", "tags3", "math", "math2"]:
-    #print(get_metadata_field(json_lst, i))
-    #print(type(get_metadata_field(json_lst, i)))
-    #print("")
