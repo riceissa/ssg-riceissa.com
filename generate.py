@@ -1,16 +1,5 @@
 #!/bin/python
 
-import glob
-
-lst_filepaths = glob.glob("pages/*.md")
-
-def generate_html(lst_filepaths, outdir="_site/"):
-    '''
-    Take each filepath in lst_filepaths and convert each to HTML.
-    '''
-    for filepath in lst_filepaths:
-        convert_single_file(filepath, outdir)
-
 def convert_single_file(filepath, outdir="_site/"):
         # This will return a dict {'json_dump': ..., 'tags': ...}
         file_dict = meta.organize_tags(myjson, meta.tag_synonyms, meta.tag_implications)
