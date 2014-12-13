@@ -139,8 +139,8 @@ def all_tags_page_compiler(tags_lst, outdir="_site/"):
 
 def tag_page_compiler(tag_data):
     '''
-    Generate the tag page for tag.  The tag page will contain a list
-    of all the pages with the tag name tag.
+    Compiler for the tag page for a single tag.  The tag page will
+    contain a list of all the pages with the tag name tag_date['tag'].
     Here tag_data = {
         'tag': <tagname>,
         'pages': [
