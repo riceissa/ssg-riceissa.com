@@ -1,4 +1,8 @@
+#!/bin/python
 # Now unused functions that came up during the writing of meta.py.
+# This script uses pandocfilters: https://github.com/jgm/pandocfilters
+# the walk function in particular is a modified version of the one there. see the pandocfilters license (3-clause BSD) at: https://github.com/jgm/pandocfilters/blob/master/LICENSE
+
 
 def gogo(key, val, f, meta):
     '''
