@@ -12,6 +12,38 @@ from jinja2 import Template, Environment, FileSystemLoader
 import os
 import meta
 
+def standardize_tags(tags, tag_synonyms):
+    '''
+    Take a list of tags (tags :: list) along with a dictionary of tag
+    synonyms (tag_synonyms :: dict) and return a new list of tags, where
+    all synonymous tags are standardized according to tag_synonyms.  For
+    instance, if tag_synonyms contains the line
+        "university-of-washington": ["uw", "uwashington"],
+    and if tags contains "uw" or "uwashington", then this will be
+    replaced by "university-of-washington".
+    '''
+    result = []
+    for tag in tags:
+        canonical = [key for key, value in tag_synonyms.items() if tag in value]
+        if not canonical:
+            canonical = [tag]
+        result.extend(canonical)
+    return result
+
+
+def imply_tags(tags, tag_implications):
+    '''
+    Take a list of tags (tags :: list) along with an OrderedDict of tag
+    implications (tag_implications :: OrderedDict).  Return a new list
+    of tags that includes all the implications.  Apply this after
+    standardizing tags.
+    '''
+    result = list(tags)
+    for key in tag_implications:
+        if key in result:
+            result.extend(tag_implications.get(key))
+    return list(set(result))
+
 def get_metadata_field(json_lst, field):
     '''
     Take a JSON list and a field name (str) and return a 
@@ -34,14 +66,29 @@ def walk_metadata(x):
     if x['t'] == 'MetaBool':
         return x['c']
     elif x['t'] == 'MetaInlines':
-        return pandocfilters.stringify(x).encode('utf-8')
+        return str(pandocfilters.stringify(x))
     elif x['t'] == 'MetaString':
-        return pandocfilters.stringify(x).encode('utf-8')
+        return str(pandocfilters.stringify(x))
     elif x['t'] == 'MetaList':
         lst = []
         for i in x['c']:
             lst.append(walk_metadata(i))
         return lst
+
+
+def pack_tags(tags):
+    '''
+    Take a list of tags (tags :: list) and return a YAML-JSON list of
+    the tags.
+    '''
+    result = []
+    for tag in tags:
+        tag_dict = {'t': 'MetaInlines', 'c': [Str(tag)]}
+        result.append(tag_dict)
+    return result
+    #return list(intersperse([Str(i) for i in tags], Space()))
+
+
 
 def get_tags(x):
     '''
@@ -64,12 +111,12 @@ def organize_tags(json_lst, tag_synonyms, tag_implications):
     dump) tags is stored.
     '''
     tags = get_tags(json_lst)
-    tags = meta.standardize_tags(tags, tag_synonyms)
-    tags = meta.imply_tags(tags, tag_implications)
+    tags = standardize_tags(tags, tag_synonyms)
+    tags = imply_tags(tags, tag_implications)
     keep_tags = list(tags)
     tags_dict = json_lst[0]['unMeta'].get('tags', {})
     tags_dict['t'] = 'MetaList'
-    tags_dict['c'] = meta.pack_tags(tags)
+    tags_dict['c'] = pack_tags(tags)
     return {'json': json_lst,
             'tags': keep_tags}
 
@@ -109,7 +156,7 @@ def markdown_to_html_compiler(filepath):
     '''
     Take the filepath of a single markdown file and compile to HTML.
     '''
-    global tagdir
+    global tagsdir
     filename = os.path.basename(filepath)
     command = "pandoc -f markdown -t json -s {filepath}".format(filepath=filepath)
     json_lst = json.loads(c.run_command(command))
@@ -129,7 +176,7 @@ def markdown_to_html_compiler(filepath):
     math = get_metadata_field(json_lst, "math")
     license = get_metadata_field(json_lst, "license")
 
-    final = skeleton.render(body=html_output, title=title, tags=tags, tagdir=tagdir, license=license, math=math).encode('utf-8')
+    final = skeleton.render(body=html_output, title=title, tags=tags, tagsdir=tagsdir, license=license, math=math).encode('utf-8')
     return final
 
 def all_tags_page_compiler(tags_lst, outdir="_site/"):
@@ -206,8 +253,10 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
 
 #### Actually generate the site
 
-tagdir = "../tags/"
+tagsdir = "../tags/"
+sitedir = "_site/"
 baseurl = "../pages/"
+pandoc_options = ""
 
 for tag_data in generate_all_tag_data(file_pattern="pages/*.md"):
     create(compiled=tag_page_compiler(tag_data), filename=tag_data['tag'], outdir="_site/tags/")
