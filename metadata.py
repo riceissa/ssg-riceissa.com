@@ -1,16 +1,9 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
 
-import json, sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
-import glob
+import json
 from pandocfilters import Str, Space
 import pandocfilters
-import commands as c
-from jinja2 import Template, Environment, FileSystemLoader
-import os
-from tag_ontology import tag_synonyms, tag_implications
 
 def get_metadata_field(json_lst, field):
     '''
