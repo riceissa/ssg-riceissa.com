@@ -81,20 +81,6 @@ def create_tag_pages(tags_dict):
     that are routenames (i.e. slugs of page names) with values that are
     the list of tags for each page.
     '''
-    tags = list(set([val for subl in tags_dict.values() for val in subl]))
-    print(tags)
-    print(tags_dict)
-    for tag in tags:
-        pages_with_tag = [page for page, page_tags in tags_dict.items() if tag in page_tags]
-        print(str(pages_with_tag) + " has " + tag)
-        template = Template("""Tag: {{ tag }}
-
-{% for page in pages_with_tag %}- [{{ page }}](./{{ page }})
-{% endfor %}""")
-        doc = template.render(tag=tag, pages_with_tag=pages_with_tag)
-        command = 'pandoc -f markdown -t html -o _site/tags/{tag}'.format(tag=tag)
-        ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-        output = ps.communicate(input=doc)[0]
 
 def create_all_tags_page(tags):
     '''
