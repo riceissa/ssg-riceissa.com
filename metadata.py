@@ -165,8 +165,36 @@ def tag_page_compiler(tag_data):
     final = skeleton.render(body=output, title="Tag: " + tag_data['tag'], license='CC0').encode('utf-8')
     return final
 
-# List of all the tag_data
-all_tag_data = []
+def generate_all_tag_data(file_pattern="pages/*.md"):
+    # List of all the tag_data where each tag_data is of the form:
+    #     tag_data = {
+    #         'tag': <tagname>,
+    #         'pages': [
+    #             {'title': <pagename>, 'url': <page_base_url>},
+    #             ...
+    #         ]
+    #     }
+    all_tag_data = []
+    lst_pages = glob.glob(file_pattern)
+    page_data = []
+    all_tags = []
+    for page in lst_pages:
+        json_lst = json.loads(c.run_command("pandoc -f markdown -t json {page}".format(page=page)))
+        file_dict = organize_tags(json_lst, meta.tag_synonyms, meta.tag_implications)
+        json_lst = file_dict['json']
+        title = get_metadata_field(json_lst, "title")
+        url = os.path.splitext(os.path.basename(page))[0]
+        tags = file_dict['tags']
+        all_tags.extend(tags)
+        page_data.append((title, url, tags))
+    all_tags = list(set(all_tags))
+    for tag in all_tags:
+        pages = []
+        for page_tuple in page_data:
+            if tag in page_tuple[2]:
+                pages.append({'title': page_tuple[0], 'url': page_tuple[1]})
+        all_tag_data.append({'tag': tag, 'pages': pages})
+    return all_tag_data
 #for tag in SOMETAGSLIST:
     #create(compiled=tag_page_compiler(tag), filename=tag, outdir="_site/tags/")
 
