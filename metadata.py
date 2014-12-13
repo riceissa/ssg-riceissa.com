@@ -6,14 +6,18 @@ from pandocfilters import Str, Space
 import pandocfilters
 import commands as c
 from jinja2 import Template, Environment, FileSystemLoader
+import os
 
 def get_metadata_field(json_lst, field):
     '''
     Take a JSON list and a field name (str) and return a 
     the field value.
     '''
-    x = json_lst[0]['unMeta'].get(field, {})
-    return walk_metadata(x)
+    try:
+        x = json_lst[0]['unMeta'].get(field, {})
+        return walk_metadata(x)
+    except KeyError:
+        return ''
 
 def walk_metadata(x):
     '''
@@ -103,15 +107,22 @@ def markdown_to_html_compiler(filepath):
     json_lst = json.loads(c.run_command(command))
     # This will return a dict {'json_dump': ..., 'tags': ...}
     file_dict = organize_tags(json_lst, meta.tag_synonyms, meta.tag_implications)
+    json_lst = file_dict['json']
+    tags = file_dict['tags']
     # all_tags is global
     #all_tags[routename] = file_dict['tags']
     command = "pandoc -f json -t html --mathjax --base-header-level=2"
-    output = c.run_command(command, pipe_in=json.dumps(file_dict['json'], separators=(',',':')))
+    html_output = c.run_command(command, pipe_in=json.dumps(json_lst, separators=(',',':')))
     env = Environment(loader=FileSystemLoader('.'))
-    pagetemp = env.get_template('templates/skeleton.html')
-    #print output
-    title = meta.get_meta_field(json.loads(myjson), "title").decode('utf-8')
-    return output
+    skeleton = env.get_template('templates/skeleton.html')
+
+    # Get metadata ready
+    title = get_metadata_field(json_lst, "title")
+    math = get_metadata_field(json_lst, "math")
+    license = get_metadata_field(json_lst, "license")
+
+    final = skeleton.render(body=html_output, title=title, tags=tags, license=license, math=math).encode('utf-8')
+    return final
 
 def all_tags_page_compiler(tags_lst, outdir="_site/"):
     tags_lst_of_dicts = []
