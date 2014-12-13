@@ -53,12 +53,12 @@
 
 {% if tags %}
 <p>Tags:
-  {% for tag in tags[0:-1] %}
+  {% for tag in tags %}
     <a href="./tags/{{ tag }}">{{ tag }}</a>
-    {% if not loop.last %}
+    {%- if not loop.last -%}
       ,
     {% endif %}
-  {% endfor %}
+  {%- endfor -%}
 .</p>
 {% endif %}
 </div>

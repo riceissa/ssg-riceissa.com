@@ -1,0 +1,10 @@
+<ul>
+  {% for pages %}
+{% for tag in tags %}
+    <li>
+      <a href="{{ url }}">{{ title }}</a>
+    </li>
+  {% endfor %}
+</ul>
+- [{{ tag }}](./{{ tag }})
+{% endfor %}""")
