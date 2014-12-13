@@ -137,6 +137,28 @@ def all_tags_page_compiler(tags_lst, outdir="_site/"):
     final = skeleton.render(body=output, title="List of all tags", license='CC0').encode('utf-8')
     return final
 
+def tag_page_compiler(tag_data):
+    '''
+    Generate the tag page for tag.  The tag page will contain a list
+    of all the pages with the tag name tag.
+    Here tag_data = {
+        'tag': <tagname>,
+        'pages': [
+            {'title': <pagename>, 'url': <page_base_url>},
+            ...
+        ]
+    }
+    '''
+    env = Environment(loader=FileSystemLoader('.'))
+    page_list = env.get_template('templates/page-list.html')
+    output = page_list.render(pages=tag_data['pages'])
+    skeleton = env.get_template('templates/skeleton.html')
+    final = skeleton.render(body=output, title="Tag: " + tag_data['tag'], license='CC0').encode('utf-8')
+    return final
+
+#for tag in SOMETAGSLIST:
+    #create(compiled=tag_page_compiler(tag), filename=tag, outdir="_site/tags/")
+
 json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
 compiled = all_tags_page_compiler(["a", "b", "c"])
 create(compiled=compiled, filename="index", outdir="_site/tags/")
