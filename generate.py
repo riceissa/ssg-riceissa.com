@@ -74,33 +74,6 @@ def convert_single_file(filepath, outdir="_site/"):
     else:
         print("{outdir} does not exist!".format(outdir=outdir))
 
-def create_tag_pages(tags_dict):
-    '''
-    Automatically create a series of pages, one for each tag that
-    appears in tags_dict.  Here tags_dict is a dictionary that has keys
-    that are routenames (i.e. slugs of page names) with values that are
-    the list of tags for each page.
-    '''
-
-def create_all_tags_page(tags):
-    '''
-    Automatically create a single HTML page that lists and links to each
-    of the tags that are used throughout the website.  The list of tags
-    is obtained from the parameter tags.
-    '''
-    template = Template("""Tags:
-
-{% for tag in tags %}- [{{ tag }}](./{{ tag }})
-{% endfor %}""")
-    doc = template.render(tags=tags)
-    command = "pandoc -f markdown -t html"
-    ps = Popen(shlex.split(command), stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-    output = ps.communicate(input=doc)[0]
-    env = Environment(loader=FileSystemLoader('.'))
-    pagetemp = env.get_template('templates/skeleton.html')
-    final = pagetemp.render(body=output, title="hello")
-    with open("_site/tags/index", "w") as f:
-        f.write(final.encode('utf-8'))
 
 all_tags = {}
 #generate_html(lst_filepaths)
