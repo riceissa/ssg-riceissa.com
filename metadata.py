@@ -165,7 +165,9 @@ def tag_page_compiler(tag_data):
     final = skeleton.render(body=output, title="Tag: " + tag_data['tag'], license='CC0').encode('utf-8')
     return final
 
+all_tags = []
 def generate_all_tag_data(file_pattern="pages/*.md"):
+    global all_tags
     # List of all the tag_data where each tag_data is of the form:
     #     tag_data = {
     #         'tag': <tagname>,
@@ -196,13 +198,17 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
         all_tag_data.append({'tag': tag, 'pages': pages})
     return all_tag_data
 
-#for tag in generate_all_tags_data():
-    #create(compiled=tag_page_compiler(tag), filename=tag, outdir="_site/tags/")
 
-json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
-compiled = all_tags_page_compiler(["a", "b", "c"])
-create(compiled=compiled, filename="index", outdir="_site/tags/")
-#match(route=id_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md" outdir="_site/"):
+#### Actually generate the site
+
+for tag_data in generate_all_tags_data(file_pattern="pages/*.md"):
+    create(compiled=tag_page_compiler(tag_data), filename=tag_data['tag'], outdir="_site/tags/")
+
+create(compiled=all_tags_page_compiler(all_tags), filename="index", outdir="_site/tags/")
+
+match(route=id_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md" outdir="_site/"):
+
+#json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
 #for i in ["title", "tags", "tags2", "tags3", "math", "math2"]:
     #print(get_metadata_field(json_lst, i))
     #print(type(get_metadata_field(json_lst, i)))
