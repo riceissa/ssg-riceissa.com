@@ -126,6 +126,11 @@ def markdown_to_html_compiler(filepath):
     return final
 
 def all_tags_page_compiler(tags_lst, outdir="_site/"):
+    '''
+    Compiler for a single page that lists and links to each of the tags
+    that are used throughout the website (included in the tags_lst
+    parameter).
+    '''
     tags_lst_of_dicts = []
     for tag in tags_lst:
         tag_dict = {'title': tag.decode('utf-8'), 'url': (outdir + "tags/" + tag).decode('utf-8')}
