@@ -110,3 +110,14 @@ def listify(x):
         return w
     elif x['t'] == 'MetaList':
         return stringify(x)
+
+
+def get_meta_field(data, field):
+    '''
+    Take a JSON object (data) and a field name (str) and return a string
+    of the field value according to pandocfilters' stringify.
+    FIXME: Maybe formatting for e.g. math should be retained instead of
+    converting to a string?
+    '''
+    x = data[0]['unMeta'].get(field, {})
+    return pandocfilters.stringify(x)
