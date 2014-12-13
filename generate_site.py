@@ -1,3 +1,17 @@
+
+# hack to get unicode working with jinja2
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+import glob
+import commands as c
+from jinja2 import Template, Environment, FileSystemLoader
+import os
+from tag_ontology import tag_synonyms, tag_implications
+from metadata import *
+
+
 def id_route(filepath):
     return filepath
 
