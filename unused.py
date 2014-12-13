@@ -95,6 +95,12 @@ def stringify(x):
             result.append(" ")
 
     # FIXME: maybe this has to be the modified walk in unused.py...
+    # FIXME: In pandocfilters, this is how format is set; below, we just set it to "", but maybe this will cause problems
+    # somewhere.
+    #if len(sys.argv) > 1:
+        #format = sys.argv[1]
+    #else:
+        #format = ""
     pandocfilters.walk(x, go, "", {})
     #return ''.join(result)
     return result
