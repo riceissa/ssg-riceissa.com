@@ -195,7 +195,8 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
                 pages.append({'title': page_tuple[0], 'url': page_tuple[1]})
         all_tag_data.append({'tag': tag, 'pages': pages})
     return all_tag_data
-#for tag in SOMETAGSLIST:
+
+#for tag in generate_all_tags_data():
     #create(compiled=tag_page_compiler(tag), filename=tag, outdir="_site/tags/")
 
 json_lst = json.loads(c.run_command("pandoc -f markdown -t json {filename}".format(filename="pages/hello.md")))
