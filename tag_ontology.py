@@ -1,3 +1,4 @@
+from collections import OrderedDict
 
 # Dictionary of tag synonyms or "shortcuts" to be used with
 # standardize_tags.  This is mostly useful when
@@ -29,7 +30,7 @@ tag_synonyms = {
 # the second will be applied, leaving you with tags a, b, and c. (This
 # is an OrderedDict so that the above works.)  It is also assumed here
 # that everything in tag_implications is standardized.
-tag_implications = collections.OrderedDict([
+tag_implications = OrderedDict([
     ("hakyll", ["haskell"]),
     ("python", ["programming"]),
     ("latex", ["linux"]),
