@@ -10,7 +10,7 @@ import pandocfilters
 import commands as c
 from jinja2 import Template, Environment, FileSystemLoader
 import os
-import meta
+from tag_ontology import tag_synonyms, tag_implications
 
 def standardize_tags(tags, tag_synonyms):
     '''
@@ -161,7 +161,7 @@ def markdown_to_html_compiler(filepath):
     command = "pandoc -f markdown -t json -s {filepath}".format(filepath=filepath)
     json_lst = json.loads(c.run_command(command))
     # This will return a dict {'json': ..., 'tags': ...}
-    file_dict = organize_tags(json_lst, meta.tag_synonyms, meta.tag_implications)
+    file_dict = organize_tags(json_lst, tag_synonyms, tag_implications)
     json_lst = file_dict['json']
     tags = file_dict['tags']
     # all_tags is global
@@ -234,7 +234,7 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
     all_tags = []
     for page in lst_pages:
         json_lst = json.loads(c.run_command("pandoc -f markdown -t json {page}".format(page=page)))
-        file_dict = organize_tags(json_lst, meta.tag_synonyms, meta.tag_implications)
+        file_dict = organize_tags(json_lst, tag_synonyms, tag_implications)
         json_lst = file_dict['json']
         title = get_metadata_field(json_lst, "title")
         url = os.path.splitext(os.path.basename(page))[0]
