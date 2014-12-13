@@ -12,16 +12,31 @@ from tag_ontology import tag_synonyms, tag_implications
 from metadata import *
 
 
+sitedir = "_site/" # relative to the current directory
+tagsdir = "tags/" # relative to sitedir
+pagesdir = "pages/" # relative to sitedir
+
+class AbsolutePathException(Exception):
+    pass
+
 def id_route(filepath):
     return filepath
 
 def cool_uri_route(filepath):
     return os.path.splitext(filepath)[0]
 
-def drop_one_parent_dir_route(filepath):
-    pass
 
-def create(compiled, filename, outdir="_site/"):
+def split_path(p):
+    a, b = os.path.split(p)
+    return (split_path(a) if len(a) and len(b) else []) + [b]
+
+def drop_one_parent_dir_route(filepath):
+    # See http://stackoverflow.com/a/15050936/3422337
+    if filepath.startswith('/'):
+        raise AbsolutePathException("filepath is absolute; must be relative")
+    return '/'.join([i for i in split_path(filepath) if i != ''][1:])
+
+def create(compiled, filename, outdir=pagesdir):
     if os.path.exists(outdir):
         write_to = outdir + filename
         output = compiled
@@ -30,7 +45,7 @@ def create(compiled, filename, outdir="_site/"):
     else:
         print("{outdir} does not exist!".format(outdir=outdir))
 
-def match(route, compiler, file_pattern, outdir="_site/"):
+def match(route, compiler, file_pattern, outdir=pagesdir):
     if os.path.exists(outdir):
         lst_filepaths = glob.glob(file_pattern)
         for filepath in lst_filepaths:
@@ -65,23 +80,30 @@ def markdown_to_html_compiler(filepath):
     math = get_metadata_field(json_lst, "math")
     license = get_metadata_field(json_lst, "license")
 
-    final = skeleton.render(body=html_output, title=title, tags=tags, tagsdir=tagsdir, license=license, math=math).encode('utf-8')
+    # Each tag page is going to be at sitedir + tagsdir + tag.  But if we reference this location from a file that is in a place other than sitedir, then it will point to sitedir + otherdir + tagsdir + tag or something weird.
+    # To solve this problem, we have to figure out how deep tagsdir is, relative to sitedir.
+    tagsdir_depth = len(split_path(tagsdir[:-1])) # the [:-1] removes the trailing slash
+    final = skeleton.render(body=html_output, title=title, tags=tags, tagsdir=tagsdir_depth*"../"+tagsdir, license=license, math=math).encode('utf-8')
     return final
 
-def all_tags_page_compiler(tags_lst, outdir="_site/"):
+def all_tags_page_compiler(tags_lst, outdir=pagesdir):
     '''
     Compiler for a single page that lists and links to each of the tags
     that are used throughout the website (included in the tags_lst
     parameter).
     '''
-    global baseurl
+    global pagesdir
     tags_lst_of_dicts = []
     for tag in tags_lst:
-        tag_dict = {'title': tag, 'url': (outdir + "tags/" + tag)}
+        tag_dict = {'title': tag, 'url': (tagsdir + tag)}
         tags_lst_of_dicts.append(tag_dict)
     env = Environment(loader=FileSystemLoader('.'))
     page_list = env.get_template('templates/page-list.html')
-    output = page_list.render(pages=tags_lst_of_dicts, baseurl=baseurl)
+    pagesdir_depth = len(split_path(pagesdir[:-1]))
+    print pagesdir_depth*"../"
+    output = page_list.render(pages=tags_lst_of_dicts, pagesdir=pagesdir_depth*"../")
+    for i in tags_lst_of_dicts:
+        print pagesdir_depth*"../" + i['url']
     skeleton = env.get_template('templates/skeleton.html')
     final = skeleton.render(body=output, title="List of all tags", license='CC0').encode('utf-8')
     return final
@@ -98,10 +120,10 @@ def tag_page_compiler(tag_data):
         ]
     }
     '''
-    global baseurl
+    global pagesdir
     env = Environment(loader=FileSystemLoader('.'))
     page_list = env.get_template('templates/page-list.html')
-    output = page_list.render(pages=tag_data['pages'], baseurl=baseurl)
+    output = page_list.render(pages=tag_data['pages'], pagesdir=pagesdir)
     skeleton = env.get_template('templates/skeleton.html')
     final = skeleton.render(body=output, title="Tag: " + tag_data['tag'], license='CC0').encode('utf-8')
     return final
@@ -142,15 +164,14 @@ def generate_all_tag_data(file_pattern="pages/*.md"):
 
 #### Actually generate the site
 
-tagsdir = "../tags/"
-sitedir = "_site/"
-baseurl = "../pages/"
+
 pandoc_options = ""
 
 for tag_data in generate_all_tag_data(file_pattern="pages/*.md"):
-    create(compiled=tag_page_compiler(tag_data), filename=tag_data['tag'], outdir="_site/tags/")
+    create(compiled=tag_page_compiler(tag_data), filename=tag_data['tag'], outdir=sitedir+tagsdir)
 
-create(compiled=all_tags_page_compiler(all_tags), filename="index", outdir="_site/tags/")
+create(compiled=all_tags_page_compiler(all_tags), filename="index", outdir=sitedir+tagsdir)
 
-match(route=cool_uri_route, compiler=markdown_to_html_compiler, file_pattern="pages/*.md", outdir="_site/")
+match(route=lambda x: drop_one_parent_dir_route(cool_uri_route(x)), compiler=markdown_to_html_compiler, file_pattern="pages/*.md", outdir=pagesdir)
 
+#print tagsdir
