@@ -48,29 +48,44 @@ class Item(object):
         self.body = body
     def set_body(self, new_body):
         self.body = new_body
-    def compile_with(self, compiler):
+    def compile_with(self, compiler, route):
         '''
-        Item -> (Item -> (Filepath -> Filepath) -> Item) -> Item
+        (Item, Compiler, (Filepath -> Filepath)) -> Item
         '''
-        return compiler(self)
+        return compiler.compiler(self, route)
+
+class Compiler(object):
+    def __init__(self, compiler):
+        self.compiler = compiler
+
+class Route(object):
+    def __init__(self, route):
+        self.route= route
 
 # so do like Item(Filepath('pages/hello.md'), "hello world!")
 
 def copy_file_compiler(item, route):
     '''
-    Item -> (Filepath -> Filepath) -> Item
+    (Item, (Filepath -> Filepath)) -> Item
     '''
     return item
 
 def self_reference_compiler(item, route):
     '''
-    Item -> (Filepath -> Filepath) -> Item
-    Use with Rules(route, self_reference_compiler(item, route))
+    (Item, (Filepath -> Filepath)) -> Item
+    This is a silly example to show why compilers need route;
+    in short, since Item only contains where it currently is and
+    the body, it won't know where it *will* be.  But sometimes we
+    want to know where it *will* be, and reference it in the output.
+    Use like so:
+        item = ...
+        route = ...
+        Rules(route, self_reference_compiler(item, route))
     '''
     body = "I will be stored in " + item.filepath.route_with(route).path
     return Item(item.filepath, body)
 
-def markdown_to_html_compiler(item):
+def markdown_to_html_compiler(item, route):
     '''
     Item -> Item
     '''
@@ -118,11 +133,6 @@ def create(path, rules):
         f.write(output)
 
 
-#class Route(object):
-    #def __init__(self, route_rule):
-        #self.route_rule = route_rule
-    #def compose_with(self, other):
-        #return Route(self.)
 
 def set_extension(extension):
     '''
@@ -141,13 +151,14 @@ def id_route(filepath):
     '''
     return filepath
 
+def to_site_dir_route(filepath, site_dir):
+    pass
+
 
 class Pattern(object):
     pass
 
 
-class Compiler(object):
-    pass
 
 class Context(object):
     pass
