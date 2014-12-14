@@ -27,17 +27,12 @@ class Filepath(object):
         self.path_lst = split_path(path)
 
     def route_with(self, route):
-        return route(self)
+        return route.route(self)
 
     def to_item(self):
         with open(self.path, 'r') as f:
             return Item(self, f.read())
 
-
-class Rules(object):
-    def __init__(self, route, compiler):
-        self.route= route
-        self.compiler = compiler
 
 
 class Item(object):
@@ -48,31 +43,46 @@ class Item(object):
         self.body = body
     def set_body(self, new_body):
         self.body = new_body
-    def compile_with(self, compiler, route):
+    def compile_with(self, compiler, rules):
         '''
-        (Item, Compiler, (Filepath -> Filepath)) -> Item
+        (Item, Compiler, Rules) -> Item
         '''
-        return compiler.compiler(self, route)
+        return compiler.compiler(self, rules)
+
+class Rules(object):
+    '''
+    Each Rules object contains rules for compiling an Item object.
+    '''
+    def __init__(self, route, compiler):
+        self.route = route
+        self.compiler = compiler
 
 class Compiler(object):
+    '''
+    Each Compiler object is a function (Item, Rules) -> Item
+    '''
     def __init__(self, compiler):
         self.compiler = compiler
 
 class Route(object):
+    '''
+    Each Route object is a function Filepath -> Filepath
+    '''
     def __init__(self, route):
-        self.route= route
+        self.route = route
 
 # so do like Item(Filepath('pages/hello.md'), "hello world!")
 
-def copy_file_compiler(item, route):
+def copy_file_compiler(item, rules):
     '''
     (Item, (Filepath -> Filepath)) -> Item
+    Basically, ignore the rules and return the item.
     '''
     return item
 
-def self_reference_compiler(item, route):
+def self_reference_compiler(item, rules):
     '''
-    (Item, (Filepath -> Filepath)) -> Item
+    (Item, Rules) -> Item
     This is a silly example to show why compilers need route;
     in short, since Item only contains where it currently is and
     the body, it won't know where it *will* be.  But sometimes we
@@ -82,7 +92,7 @@ def self_reference_compiler(item, route):
         route = ...
         Rules(route, self_reference_compiler(item, route))
     '''
-    body = "I will be stored in " + item.filepath.route_with(route).path
+    body = "I will be stored in " + item.filepath.route_with(rules.route).path
     return Item(item.filepath, body)
 
 def markdown_to_html_compiler(item, route):
@@ -118,7 +128,7 @@ def markdown_to_html_compiler(item, route):
 
 def match(pattern, rules):
     '''
-    Pattern(str) -> Rules -> IO
+    (Pattern(str), Rules) -> IO
     '''
     paths_lst = glob.glob(pattern)
     for path in paths_lst:
@@ -167,3 +177,14 @@ class Context(object):
 
 class Tags(object):
     pass
+
+
+if __name__ == "__main__":
+    fi = Item(Filepath("pages/hello.md"), "hello world!")
+    ro = Route(set_extension(".html"))
+    co = Compiler(self_reference_compiler)
+    #co = Compiler(copy_file_compiler)
+    ru = Rules(ro, co)
+    #print ru.compiler.compiler
+    #print ru.route.route
+    print fi.compile_with(co, ru).body
