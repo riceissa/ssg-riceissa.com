@@ -1,6 +1,9 @@
 import os
 import glob
 
+site_dir = "_site/"
+tags_dir = "tags/" # relative to site_dir
+
 
 class AbsolutePathException(Exception):
     pass
@@ -22,9 +25,15 @@ class Filepath(object):
         if path.startswith('/'):
             raise AbsolutePathException("path is absolute; must be relative")
         self.path = path
-        self.directory, self.filename = os.path.split(path)
-        self.directory += "/"
-        self.path_lst = split_path(path)
+
+    def filename(self):
+        return os.path.split(self.path)[1]
+
+    def directory(self):
+        return os.path.split(self.path)[0] + "/"
+
+    def path_lst(self):
+        return split_path(self.path)
 
     def route_with(self, route):
         return route.route(self)
@@ -53,9 +62,10 @@ class Rules(object):
     '''
     Each Rules object contains rules for compiling an Item object.
     '''
-    def __init__(self, route, compiler):
+    def __init__(self, route=site_dir_route, compiler=copy_file_compiler, tags_route=to_dir(site_dir + tags_dir)):
         self.route = route
         self.compiler = compiler
+        self.tags_route = tags_route
 
 class Compiler(object):
     '''
@@ -90,14 +100,16 @@ def self_reference_compiler(item, rules):
     Use like so:
         item = ...
         route = ...
-        Rules(route, self_reference_compiler(item, route))
+        compiler = Compiler(self_reference_compiler)
+        rules = Rules(route, compiler)
+        item.compile_with(compiler, rules)
     '''
     body = "I will be stored in " + item.filepath.route_with(rules.route).path
     return Item(item.filepath, body)
 
-def markdown_to_html_compiler(item, route):
+def markdown_to_html_compiler(item, rules):
     '''
-    Item -> Item
+    (Item, Rules) -> Item
     '''
     filename = item.filepath.filename
     command = "pandoc -f markdown -t json -s {path}".format(path=item.filepath.path)
@@ -118,6 +130,11 @@ def markdown_to_html_compiler(item, route):
 
     # Each tag page is going to be at sitedir + tagsdir + tag.  But if we reference this location from a file that is in a place other than sitedir, then it will point to sitedir + otherdir + tagsdir + tag or something weird.
     # To solve this problem, we have to figure out how deep tagsdir is, relative to sitedir.
+
+    item.filepath
+    rules.route
+    where_this_file_will_go = item.filepath.route_with(rule.route)
+    where_tags_will_go
     tagsdir_depth = len(split_path(tagsdir[:-1])) # the [:-1] removes the trailing slash
     final = skeleton.render(body=html_output, title=title, tags=tags, tagsdir=tagsdir_depth*"../"+tagsdir, license=license, math=math).encode('utf-8')
     return final
@@ -132,21 +149,25 @@ def match(pattern, rules):
     '''
     paths_lst = glob.glob(pattern)
     for path in paths_lst:
-        output = Filepath(path).to_item().compile_with(rules.compiler(rules.route)).body
+        output = Filepath(path).to_item().compile_with(rules.compiler, rules).body
         write_to = Filepath(path).route_with(rules.route).path
         with open(write_to, 'w') as f:
             f.write(output)
 
-def create(path, rules):
-    output = rules.compiler.body
-    with open(path, 'w') as f:
+def create(path, base_item, rules):
+    '''
+    (Path(str), Item, Rules) -> IO
+    '''
+    output = rules.compiler(base_item, rules).body
+    write_to = Filepath(path).path # this makes sure the path is relative
+    with open(write_to, 'w') as f:
         f.write(output)
 
 
 
 def set_extension(extension):
     '''
-    str -> Filepath -> Filepath
+    Extension(str) -> Filepath -> Filepath
     '''
     def f(filepath):
         '''
@@ -161,8 +182,17 @@ def id_route(filepath):
     '''
     return filepath
 
-def to_site_dir_route(filepath, site_dir):
-    pass
+def site_dir_route(filepath):
+    global site_dir
+    return to_dir(site_dir)(filepath)
+
+def to_dir(site_dir):
+    '''
+    Site_dir(str) -> Filepath -> Filepath
+    '''
+    def f(filepath):
+        return Filepath(site_dir + filepath.filename())
+    return f
 
 
 class Pattern(object):
@@ -180,6 +210,7 @@ class Tags(object):
 
 
 if __name__ == "__main__":
+    # The end-user should be able to use this program like so:
     fi = Item(Filepath("pages/hello.md"), "hello world!")
     ro = Route(set_extension(".html"))
     co = Compiler(self_reference_compiler)
@@ -187,4 +218,6 @@ if __name__ == "__main__":
     ru = Rules(ro, co)
     #print ru.compiler.compiler
     #print ru.route.route
-    print fi.compile_with(co, ru).body
+    print fi.compile_with(co, ru).filepath.path
+    print fi.filepath.route_with(ro).path
+    print fi.filepath.directory(), fi.filepath.filename(), fi.filepath.path_lst()
