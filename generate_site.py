@@ -27,11 +27,11 @@ def cool_uri_route(filepath):
 
 
 def split_path(p):
+    # See http://stackoverflow.com/a/15050936/3422337
     a, b = os.path.split(p)
     return (split_path(a) if len(a) and len(b) else []) + [b]
 
 def drop_one_parent_dir_route(filepath):
-    # See http://stackoverflow.com/a/15050936/3422337
     if filepath.startswith('/'):
         raise AbsolutePathException("filepath is absolute; must be relative")
     return '/'.join([i for i in split_path(filepath) if i != ''][1:])
