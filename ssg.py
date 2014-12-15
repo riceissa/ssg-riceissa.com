@@ -212,11 +212,32 @@ def create(path, base_item, rules):
     '''
     (Path(str), Item, Rules) -> IO
     '''
-    output = rules.compiler(base_item, rules).body
-    write_to = Filepath(path).path # this makes sure the path is relative
+    output = base_item.compile_with(rules.compiler, rules).body
+    write_to = Filepath(path).path # Filepath makes sure the path is relative
     with open(write_to, 'w') as f:
         f.write(output)
 
+@Compiler
+def all_tags_page_compiler(item, rules):
+    global tags_dir
+    tags_lst_of_dicts = []
+    for tag in tags_lst:
+        tag_dict = {'title': tag, 'url': (tagsdir + tag)}
+        tags_lst_of_dicts.append(tag_dict)
+    env = Environment(loader=FileSystemLoader('.'))
+    page_list = env.get_template('templates/page-list.html')
+    pagesdir_depth = len(split_path(pagesdir[:-1]))
+    print pagesdir_depth*"../"
+    output = page_list.render(pages=tags_lst_of_dicts)
+    for i in tags_lst_of_dicts:
+        print pagesdir_depth*"../" + i['url']
+    skeleton = env.get_template('templates/skeleton.html')
+    final = skeleton.render(body=output, title="List of all tags", license='CC0').encode('utf-8')
+    return final
+
+@Compiler
+def tag_page_compiler(item, rules):
+    pass
 
 
 def set_extension(extension):
@@ -267,18 +288,38 @@ class Tag(object):
     def __init__(self, name):
         self.name = name
     def get_pages_using(self, items):
-        pass
+        '''
+        (Tag, [Item]) -> [Item]
+        '''
+        final = []
+        for item in items:
+            json_lst = json.loads(c.run_command("pandoc -f markdown -t json", pipe_in=item.body))
+            if self.name in get_metadata_field(json_lst, "tags"):
+                final.append(item)
+        return final
 
+def get_items_from_pattern(pattern):
+    '''
+    Pattern(str) -> [Item]
+    '''
+    paths = glob.glob(pattern)
+    final = []
+    for path in paths:
+        with open(path, 'r') as f:
+            body = f.read()
+            final.append(Item(Filepath(path), body))
+    return final
 
 if __name__ == "__main__":
     # The end-user should be able to use this program like so:
-    fi = Item(Filepath("pages/hello.md"), "hello world!")
-    ro = set_extension(".html")
-    co = self_reference_compiler
-    #co = Compiler(copy_file_compiler)
+    fi = Filepath("pages/hello.md").to_item()
+    ro = my_route
+    co = markdown_to_html_compiler
     ru = Rules(ro, co)
-    #print ru.compiler.compiler
-    #print ru.route.route
-    print fi.compile_with(co, ru).filepath.path
-    print fi.filepath.route_with(ro).path
-    print fi.filepath.directory(), fi.filepath.filename(), fi.filepath.path_lst()
+    #print fi.compile_with(co, ru).filepath.path
+    #print fi.filepath.route_with(ro).path
+    #print fi.compile_with(co, ru).body
+    #match("pages/*.md", ru)
+    x = Tag("chemistry").get_pages_using(get_items_from_pattern("pages/*.md"))
+    for i in x:
+        print i.filepath.path
