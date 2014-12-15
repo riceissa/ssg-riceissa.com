@@ -4,10 +4,45 @@ import glob
 site_dir = "_site/"
 tags_dir = "tags/" # relative to site_dir
 
-def site_dir_route(filepath):
-    global site_dir
-    return to_dir(site_dir)(filepath)
 
+class Route(object):
+    '''
+    Each Route object is a function Filepath -> Filepath
+    '''
+    def __init__(self, route):
+        self.route = route
+
+class Compiler(object):
+    '''
+    Each Compiler object is a function (Item, Rules) -> Item
+    '''
+    def __init__(self, compiler):
+        self.compiler = compiler
+
+@Route
+def site_dir_route(filepath):
+    '''
+    Filepath -> Filepath
+    '''
+    global site_dir
+    return to_dir(site_dir)
+
+
+
+def to_dir(site_dir):
+    '''
+    Site_dir(str) -> Filepath -> Filepath
+    '''
+    @Route
+    def f(filepath):
+        return Filepath(site_dir + filepath.filename())
+    return f
+
+@Route
+def my_route(filepath):
+    return filepath.route_with(set_extension("")).route_with(drop_one_parent_dir_route).route_with(site_dir_route)
+
+@Compiler
 def copy_file_compiler(item, rules):
     '''
     (Item, Route) -> Item
@@ -16,13 +51,6 @@ def copy_file_compiler(item, rules):
     return item
 
 
-def to_dir(site_dir):
-    '''
-    Site_dir(str) -> Filepath -> Filepath
-    '''
-    def f(filepath):
-        return Filepath(site_dir + filepath.filename())
-    return f
 
 class AbsolutePathException(Exception):
     pass
@@ -35,6 +63,10 @@ def split_path(path):
     # See http://stackoverflow.com/a/15050936/3422337
     a, b = os.path.split(path)
     return (split_path(a) if len(a) and len(b) else []) + [b]
+
+@Route
+def drop_one_parent_dir_route(filepath):
+    return Filepath('/'.join([i for i in split_path(filepath.path)[1:]]))
 
 class Filepath(object):
     '''
@@ -56,6 +88,15 @@ class Filepath(object):
 
     def route_with(self, route):
         return route.route(self)
+
+    def go_to_other(self, other):
+        path1 = os.path.normpath(self.path)
+        path2 = os.path.normpath(other.path)
+        depth = len(Filepath(path1).path_lst()) - 1
+        return Filepath("../" * depth + path2)
+
+    def relative_to(self, other):
+        return other.go_to_other(self)
 
     def to_item(self):
         with open(self.path, 'r') as f:
@@ -86,23 +127,11 @@ class Rules(object):
         self.compiler = compiler
         self.tags_route = tags_route
 
-class Compiler(object):
-    '''
-    Each Compiler object is a function (Item, Rules) -> Item
-    '''
-    def __init__(self, compiler):
-        self.compiler = compiler
-
-class Route(object):
-    '''
-    Each Route object is a function Filepath -> Filepath
-    '''
-    def __init__(self, route):
-        self.route = route
 
 # so do like Item(Filepath('pages/hello.md'), "hello world!")
 
 
+@Compiler
 def self_reference_compiler(item, rules):
     '''
     (Item, Rules) -> Item
@@ -130,27 +159,32 @@ def markdown_to_html_compiler(item, rules):
     # This will return a dict {'json': ..., 'tags': ...}
     file_dict = organize_tags(json_lst, tag_synonyms, tag_implications)
     json_lst = file_dict['json']
-    tags = file_dict['tags']
+    tags = [Tag(t) for t in file_dict['tags']]
     command = "pandoc -f json -t html --mathjax --base-header-level=2"
     html_output = c.run_command(command, pipe_in=json.dumps(json_lst, separators=(',',':'))).encode('utf-8')
     env = Environment(loader=FileSystemLoader('.'))
     skeleton = env.get_template('templates/skeleton.html')
 
     # Get metadata ready
-    title = get_metadata_field(json_lst, "title")
-    math = get_metadata_field(json_lst, "math")
-    license = get_metadata_field(json_lst, "license")
+    ctx = Context(
+        title = get_metadata_field(json_lst, "title"),
+        math = get_metadata_field(json_lst, "math"),
+        license = get_metadata_field(json_lst, "license"),
+    )
 
     # Each tag page is going to be at sitedir + tagsdir + tag.  But if we reference this location from a file that is in a place other than sitedir, then it will point to sitedir + otherdir + tagsdir + tag or something weird.
     # To solve this problem, we have to figure out how deep tagsdir is, relative to sitedir.
 
     item.filepath
     rules.route
-    where_this_file_will_go = item.filepath.route_with(rules.route)
+    final_filepath = item.filepath.route_with(rules.route)
     # FIXME
-    where_tags_will_go = Filepath(tagname).route_with(rules.tags_route)
+
+    tag_filepath = Filepath(tag.name).route_with(rules.tags_route)
+    Filepath()
+    tag_filepath.relative_to(final_filepath)
     tagsdir_depth = len(split_path(tagsdir[:-1])) # the [:-1] removes the trailing slash
-    final = skeleton.render(body=html_output, title=title, tags=tags, tagsdir=tagsdir_depth*"../"+tagsdir, license=license, math=math).encode('utf-8')
+    final = skeleton.render(body=html_output, title=ctx.title, tags=ctx.tags, tagsdir=tagsdir_depth*"../"+tagsdir, license=ctx.license, math=ctx.math).encode('utf-8')
     return final
 
     new_body = something(item.body)
@@ -183,6 +217,7 @@ def set_extension(extension):
     '''
     Extension(str) -> Filepath -> Filepath
     '''
+    @Route
     def f(filepath):
         '''
         Filepath -> Filepath
@@ -190,6 +225,7 @@ def set_extension(extension):
         return Filepath(os.path.splitext(filepath.path)[0] + extension)
     return f
 
+@Route
 def id_route(filepath):
     '''
     Filepath -> Filepath
@@ -205,7 +241,17 @@ class Context(object):
     So you can do things like x = Context(title="hello, world!", math="true") then access with x.title, x.math and so on.
     FIXME: add some default fields.
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, title="", math="True", tags=[], license="CC-BY", **kwargs):
+        self.title = title
+        if type(math) is bool:
+            if math:
+                self.math = "True"
+            else:
+                self.math = "False"
+        else:
+            self.math = math
+        self.tags = tags
+        self.license = license
         for key in kwargs:
             self.__setattr__(key, kwargs[key])
 
@@ -214,15 +260,15 @@ class Context(object):
 class Tag(object):
     def __init__(self, name):
         self.name = name
-    def get_pages(self):
+    def get_pages_using(self, items):
         pass
 
 
 if __name__ == "__main__":
     # The end-user should be able to use this program like so:
     fi = Item(Filepath("pages/hello.md"), "hello world!")
-    ro = Route(set_extension(".html"))
-    co = Compiler(self_reference_compiler)
+    ro = set_extension(".html")
+    co = self_reference_compiler
     #co = Compiler(copy_file_compiler)
     ru = Rules(ro, co)
     #print ru.compiler.compiler
