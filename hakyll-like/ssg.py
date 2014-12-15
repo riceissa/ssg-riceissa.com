@@ -4,6 +4,25 @@ import glob
 site_dir = "_site/"
 tags_dir = "tags/" # relative to site_dir
 
+def site_dir_route(filepath):
+    global site_dir
+    return to_dir(site_dir)(filepath)
+
+def copy_file_compiler(item, rules):
+    '''
+    (Item, Route) -> Item
+    Basically, ignore the rules and return the item.
+    '''
+    return item
+
+
+def to_dir(site_dir):
+    '''
+    Site_dir(str) -> Filepath -> Filepath
+    '''
+    def f(filepath):
+        return Filepath(site_dir + filepath.filename())
+    return f
 
 class AbsolutePathException(Exception):
     pass
@@ -83,12 +102,6 @@ class Route(object):
 
 # so do like Item(Filepath('pages/hello.md'), "hello world!")
 
-def copy_file_compiler(item, rules):
-    '''
-    (Item, (Filepath -> Filepath)) -> Item
-    Basically, ignore the rules and return the item.
-    '''
-    return item
 
 def self_reference_compiler(item, rules):
     '''
@@ -133,8 +146,9 @@ def markdown_to_html_compiler(item, rules):
 
     item.filepath
     rules.route
-    where_this_file_will_go = item.filepath.route_with(rule.route)
-    where_tags_will_go
+    where_this_file_will_go = item.filepath.route_with(rules.route)
+    # FIXME
+    where_tags_will_go = Filepath(tagname).route_with(rules.tags_route)
     tagsdir_depth = len(split_path(tagsdir[:-1])) # the [:-1] removes the trailing slash
     final = skeleton.render(body=html_output, title=title, tags=tags, tagsdir=tagsdir_depth*"../"+tagsdir, license=license, math=math).encode('utf-8')
     return final
@@ -182,31 +196,26 @@ def id_route(filepath):
     '''
     return filepath
 
-def site_dir_route(filepath):
-    global site_dir
-    return to_dir(site_dir)(filepath)
 
-def to_dir(site_dir):
-    '''
-    Site_dir(str) -> Filepath -> Filepath
-    '''
-    def f(filepath):
-        return Filepath(site_dir + filepath.filename())
-    return f
-
-
-class Pattern(object):
-    pass
 
 
 
 class Context(object):
-    pass
+    '''
+    So you can do things like x = Context(title="hello, world!", math="true") then access with x.title, x.math and so on.
+    FIXME: add some default fields.
+    '''
+    def __init__(self, **kwargs):
+        for key in kwargs:
+            self.__setattr__(key, kwargs[key])
 
 
 
-class Tags(object):
-    pass
+class Tag(object):
+    def __init__(self, name):
+        self.name = name
+    def get_pages(self):
+        pass
 
 
 if __name__ == "__main__":
