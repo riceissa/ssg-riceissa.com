@@ -187,11 +187,13 @@ def markdown_to_html_compiler(item, rules):
     )
 
     final_filepath = item.filepath.route_with(rules.route)
-    tag_filepath = Filepath(tag.name).route_with(rules.tags_route)
-    final = skeleton.render(body=html_output, title=ctx.title, tags=ctx.tags, tags_dir=tag_filepath.relative_to(final_filepath), license=ctx.license, math=ctx.math).encode('utf-8')
-    return final
+    tags_lst = []
+    for tag in tags:
+        tag_filepath = Filepath(tag.name).route_with(rules.tags_route)
+        rel_path = tag_filepath.relative_to(final_filepath).path
+        tags_lst.append({'name': tag.name, 'path': rel_path})
+    new_body = skeleton.render(body=html_output, title=ctx.title, tags=tags_lst, license=ctx.license, math=ctx.math).encode('utf-8')
 
-    new_body = something(item.body)
     # We keep the original filepath
     return Item(item.filepath, new_body)
 
