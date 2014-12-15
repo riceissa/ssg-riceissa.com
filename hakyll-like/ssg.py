@@ -36,6 +36,14 @@ site_dir_route = to_dir(site_dir)
 def my_route(filepath):
     return filepath.route_with(set_extension("")).route_with(drop_one_parent_dir_route).route_with(site_dir_route)
 
+@Route
+def standard_tags_route(filepath):
+    '''
+    Filepath -> Filepath
+    Here filepath is just Filepath(tag.name) for a tag.
+    '''
+    return filepath.route_with(to_dir(site_dir + tags_dir))
+
 @Compiler
 def copy_file_compiler(item, rules):
     '''
@@ -116,7 +124,7 @@ class Rules(object):
     '''
     Each Rules object contains rules for compiling an Item object.
     '''
-    def __init__(self, route=site_dir_route, compiler=copy_file_compiler, tags_route=to_dir(site_dir + tags_dir)):
+    def __init__(self, route=site_dir_route, compiler=copy_file_compiler, tags_route=standard_tags_route):
         self.route = route
         self.compiler = compiler
         self.tags_route = tags_route
@@ -143,6 +151,7 @@ def self_reference_compiler(item, rules):
     body = "I will be stored in " + item.filepath.route_with(rules.route).path
     return Item(item.filepath, body)
 
+@Compiler
 def markdown_to_html_compiler(item, rules):
     '''
     (Item, Rules) -> Item
@@ -166,19 +175,9 @@ def markdown_to_html_compiler(item, rules):
         license = get_metadata_field(json_lst, "license"),
     )
 
-    # Each tag page is going to be at sitedir + tagsdir + tag.  But if we reference this location from a file that is in a place other than sitedir, then it will point to sitedir + otherdir + tagsdir + tag or something weird.
-    # To solve this problem, we have to figure out how deep tagsdir is, relative to sitedir.
-
-    item.filepath
-    rules.route
     final_filepath = item.filepath.route_with(rules.route)
-    # FIXME
-
     tag_filepath = Filepath(tag.name).route_with(rules.tags_route)
-    Filepath()
-    tag_filepath.relative_to(final_filepath)
-    tagsdir_depth = len(split_path(tagsdir[:-1])) # the [:-1] removes the trailing slash
-    final = skeleton.render(body=html_output, title=ctx.title, tags=ctx.tags, tagsdir=tagsdir_depth*"../"+tagsdir, license=ctx.license, math=ctx.math).encode('utf-8')
+    final = skeleton.render(body=html_output, title=ctx.title, tags=ctx.tags, tags_dir=tag_filepath.relative_to(final_filepath), license=ctx.license, math=ctx.math).encode('utf-8')
     return final
 
     new_body = something(item.body)
