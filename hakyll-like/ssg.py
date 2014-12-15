@@ -19,15 +19,6 @@ class Compiler(object):
     def __init__(self, compiler):
         self.compiler = compiler
 
-@Route
-def site_dir_route(filepath):
-    '''
-    Filepath -> Filepath
-    '''
-    global site_dir
-    return to_dir(site_dir)
-
-
 
 def to_dir(site_dir):
     '''
@@ -37,6 +28,9 @@ def to_dir(site_dir):
     def f(filepath):
         return Filepath(site_dir + filepath.filename())
     return f
+
+
+site_dir_route = to_dir(site_dir)
 
 @Route
 def my_route(filepath):
