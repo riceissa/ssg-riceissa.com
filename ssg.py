@@ -1,5 +1,16 @@
-import os
+#!/bin/python
+
+# hack to get unicode working with jinja2
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 import glob
+import commands as c
+from jinja2 import Template, Environment, FileSystemLoader
+import os
+from tag_ontology import tag_synonyms, tag_implications
+from metadata import *
 
 site_dir = "_site/"
 tags_dir = "tags/" # relative to site_dir
