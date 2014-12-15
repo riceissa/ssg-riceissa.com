@@ -2,7 +2,7 @@
 title: hello world [はん](-飯)
 math: no
 math2: $\sin x$
-tags: [a, b, c, hakyll]
+tags: [a, b, c, hakyll, chemistry]
 tags2: [a, b, c]
 tags3: [yes, yes, no]
 ...
