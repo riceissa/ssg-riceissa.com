@@ -31,13 +31,13 @@ class Compiler(object):
         self.compiler = compiler
 
 
-def to_dir(site_dir):
+def to_dir(dirname):
     '''
     Site_dir(str) -> Filepath -> Filepath
     '''
     @Route
     def f(filepath):
-        return Filepath(site_dir + filepath.filename())
+        return Filepath(dirname + filepath.filename())
     return f
 
 
@@ -89,7 +89,8 @@ class Filepath(object):
         if path.startswith('/'):
             raise AbsolutePathException("path is absolute; must be relative")
         self.path = path
-
+    def __str__(self):
+        return self.path
     def filename(self):
         return os.path.split(self.path)[1]
 
@@ -268,7 +269,7 @@ class Context(object):
     So you can do things like x = Context(title="hello, world!", math="true") then access with x.title, x.math and so on.
     FIXME: add some default fields.
     '''
-    def __init__(self, title="", math="True", tags=[], license="CC-BY", **kwargs):
+    def __init__(self, title="", math="True", tags=[], license="CC-BY", authors=[], **kwargs):
         self.title = title
         if type(math) is bool:
             if math:
@@ -279,6 +280,7 @@ class Context(object):
             self.math = math
         self.tags = tags
         self.license = license
+        self.authors = authors
         for key in kwargs:
             self.__setattr__(key, kwargs[key])
 
@@ -287,6 +289,8 @@ class Context(object):
 class Tag(object):
     def __init__(self, name):
         self.name = name
+    def __str__(self):
+        return self.name
     def get_pages_using(self, items):
         '''
         (Tag, [Item]) -> [Item]
